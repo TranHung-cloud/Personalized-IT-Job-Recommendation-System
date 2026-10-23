@@ -1,0 +1,44 @@
+BEGIN;
+
+-- =========================================================
+-- 1. ROLE
+-- =========================================================
+
+INSERT INTO role (role_name)
+VALUES
+    ('admin'),
+    ('user')
+ON CONFLICT (role_name) DO NOTHING;
+
+
+-- =========================================================
+-- 2. SITE
+-- Các website tuyển dụng dùng làm nguồn crawl
+-- =========================================================
+
+INSERT INTO site (site_name)
+VALUES
+    ('TopCV'),
+    ('TopDev'),
+    ('ITviec')
+ON CONFLICT (site_name) DO NOTHING;
+
+
+-- =========================================================
+-- 3. QUALIFICATIONS
+-- Danh mục bằng cấp / trình độ học vấn
+-- =========================================================
+
+INSERT INTO qualifications (qual_name)
+VALUES
+    ('Trung cấp'),
+    ('Cao đẳng'),
+    ('Cử nhân'),
+    ('Kỹ sư'),
+    ('Thạc sĩ'),
+    ('Tiến sĩ'),
+    ('Giáo sư'),
+    ('Khác')
+ON CONFLICT (qual_name) DO NOTHING;
+
+COMMIT;

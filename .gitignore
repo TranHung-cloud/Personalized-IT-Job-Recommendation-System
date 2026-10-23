@@ -1,0 +1,53 @@
+#==============================
+#Environment variables & secrets
+#==============================
+
+.env .env.* !.env.example !.env.*.example
+
+#==============================
+#Python / Crawler
+#==============================
+
+crawl/pycache/ crawl/**/.py[cod] crawl/.venv/ crawl/venv/ crawl/env/ crawl/.pytest_cache/ crawl/.mypy_cache/ crawl/.ruff_cache/ crawl/.coverage crawl/htmlcov/ crawl/dist/ crawl/build/ crawl/.egg-info/ crawl/.ipynb_checkpoints/
+
+#==============================
+#Java / Spring Boot / Maven
+#==============================
+
+backend/target/ backend/.mvn-cache/ backend/*.log backend/logs/
+
+#==============================
+#Next.js
+#==============================
+
+frontend/node_modules/ frontend/.next/ frontend/out/ frontend/build/ frontend/coverage/
+
+#==============================
+#Environment files
+#==============================
+
+frontend/.env.local frontend/.env.development.local frontend/.env.test.local frontend/.env.production.local
+
+#==============================
+#Logs
+#==============================
+
+.log npm-debug.log yarn-debug.log* pnpm-debug.log*
+
+#==============================
+#IDEs
+#==============================
+
+.idea/ .vscode/ *.iml
+
+#==============================
+#Operating system
+#==============================
+
+.DS_Store Thumbs.db desktop.ini
+
+#==============================
+#Temporary files
+#==============================
+
+*.tmp *.swp *.bak

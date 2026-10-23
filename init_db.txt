@@ -1,0 +1,322 @@
+BEGIN;
+
+-- =========================================================
+-- 1. COMPANY
+-- =========================================================
+
+CREATE TABLE company (
+    co_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    co_name VARCHAR(255) NOT NULL,
+    co_name_norm VARCHAR(255)
+);
+
+CREATE INDEX idx_company_name_norm
+    ON company (co_name_norm);
+
+
+-- =========================================================
+-- 2. ACCOUNT & ROLE
+-- =========================================================
+
+CREATE TABLE role (
+    role_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    role_name VARCHAR(100) NOT NULL UNIQUE
+);
+
+CREATE TABLE account (
+    acc_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+	role_id UUID REFERENCES role(role_id),
+    acc_email VARCHAR(320) NOT NULL UNIQUE,
+    acc_password_hash TEXT NOT NULL,
+    acc_created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    acc_deleted_at TIMESTAMPTZ
+);
+
+-- =========================================================
+-- 3. SITE & SOURCE
+-- Site: website/platform hosting crawl sources
+-- Source: individual source record from the CDM
+-- =========================================================
+
+CREATE TABLE site (
+    site_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    site_name VARCHAR(255) NOT NULL UNIQUE
+);
+
+CREATE TABLE source (
+    src_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    site_id UUID REFERENCES site(site_id),
+    src_url TEXT NOT NULL,
+    src_crawled_at TIMESTAMPTZ,
+    src_created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    src_raw_key TEXT
+);
+
+CREATE INDEX idx_source_site_id ON source(site_id);
+CREATE INDEX idx_source_crawled_at ON source(src_crawled_at);
+
+
+-- =========================================================
+-- 4. CANONICAL DICTIONARIES
+-- =========================================================
+
+CREATE TABLE position (
+    pos_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    pos_name VARCHAR(255) NOT NULL UNIQUE
+);
+
+CREATE TABLE work_mode (
+    wm_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    wm_name VARCHAR(100) NOT NULL UNIQUE
+);
+
+CREATE TABLE location (
+    loc_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    loc_name VARCHAR(255) NOT NULL UNIQUE
+);
+
+CREATE TABLE skill (
+    sk_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sk_name VARCHAR(255) NOT NULL UNIQUE
+);
+
+
+-- =========================================================
+-- 5. RAW DICTIONARIES
+-- Each raw name maps to at most one canonical entity.
+-- RawCount is retained as a dictionary statistic.
+-- =========================================================
+
+CREATE TABLE position_raw (
+    pos_raw_name VARCHAR(255) PRIMARY KEY,
+    pos_raw_count INT NOT NULL DEFAULT 1
+        CHECK (pos_raw_count >= 1),
+    pos_raw_status VARCHAR(30) NOT NULL DEFAULT 'pending'
+        CHECK (pos_raw_status IN (
+            'pending', 'mapped', 'ignored', 'review'
+        )),
+    pos_id UUID REFERENCES position(pos_id)
+);
+
+CREATE TABLE work_mode_raw (
+    wm_raw_name VARCHAR(255) PRIMARY KEY,
+    wm_raw_count BIGINT NOT NULL DEFAULT 1
+        CHECK (wm_raw_count >= 1),
+    wm_raw_status VARCHAR(30) NOT NULL DEFAULT 'pending'
+        CHECK (wm_raw_status IN (
+            'pending', 'mapped', 'ignored', 'review'
+        )),
+    wm_id UUID REFERENCES work_mode(wm_id)
+);
+
+CREATE TABLE location_raw (
+    loc_raw_name VARCHAR(255) PRIMARY KEY,
+    loc_raw_count BIGINT NOT NULL DEFAULT 1
+        CHECK (loc_raw_count >= 1),
+    loc_raw_status VARCHAR(30) NOT NULL DEFAULT 'pending'
+        CHECK (loc_raw_status IN (
+            'pending', 'mapped', 'ignored', 'review'
+        )),
+    loc_id UUID REFERENCES location(loc_id)
+);
+
+CREATE TABLE skill_raw (
+    sk_raw_name VARCHAR(255) PRIMARY KEY,
+    sk_raw_count BIGINT NOT NULL DEFAULT 1
+        CHECK (sk_raw_count >= 1),
+    sk_raw_status VARCHAR(30) NOT NULL DEFAULT 'pending'
+        CHECK (sk_raw_status IN (
+            'pending', 'mapped', 'ignored', 'review'
+        )),
+    sk_id UUID REFERENCES skill(sk_id)
+);
+
+CREATE INDEX idx_position_raw_pos_id
+    ON position_raw(pos_raw_name);
+CREATE INDEX idx_work_mode_raw_wm_id
+    ON work_mode_raw(wm_raw_name);
+CREATE INDEX idx_location_raw_loc_id
+    ON location_raw(loc_raw_name);
+CREATE INDEX idx_skill_raw_sk_id
+    ON skill_raw(sk_raw_name);
+
+
+-- =========================================================
+-- 6. JOB
+-- =========================================================
+
+CREATE TABLE job (
+    job_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    pos_id UUID NOT NULL REFERENCES position(pos_id),
+    wm_id UUID NOT NULL REFERENCES work_mode(wm_id),
+    loc_id UUID NOT NULL REFERENCES location(loc_id),
+    co_id UUID REFERENCES company(co_id),
+    src_id UUID REFERENCES source(src_id),
+
+    job_title VARCHAR(500) NOT NULL,
+    job_title_norm VARCHAR(500),
+
+    job_exp_min INTEGER CHECK (job_exp_min >= 0),
+    job_exp_max INTEGER CHECK (job_exp_max >= 0),
+
+    job_sal_min INTEGER CHECK (job_sal_min >= 0),
+    job_sal_max INTEGER CHECK (job_sal_max >= 0),
+    job_sal_nego BOOLEAN NOT NULL DEFAULT FALSE,
+
+    job_desc TEXT,
+
+    job_expired_at TIMESTAMPTZ,
+    job_posted_at TIMESTAMPTZ,
+    job_benefit TEXT,
+
+    job_status VARCHAR(30) NOT NULL DEFAULT 'active'
+        CHECK (job_status IN (
+            'active', 'expired', 'closed', 'draft', 'unknown'
+        )),
+
+    CHECK (
+        job_exp_min IS NULL
+        OR job_exp_max IS NULL
+        OR job_exp_min <= job_exp_max
+    ),
+
+    CHECK (
+        job_sal_min IS NULL
+        OR job_sal_max IS NULL
+        OR job_sal_min <= job_sal_max
+    )
+);
+
+CREATE INDEX idx_job_company ON job(co_id);
+CREATE INDEX idx_job_source ON job(src_id);
+CREATE INDEX idx_job_status ON job(job_status);
+CREATE INDEX idx_job_posted_at ON job(job_posted_at);
+CREATE INDEX idx_job_title_norm ON job(job_title_norm);
+
+-- =========================================================
+-- 7. JOB REQUIREMENTS / RAW DICTIONARY RELATIONSHIPS
+-- =========================================================
+
+CREATE TABLE requires_skill (
+    job_id UUID NOT NULL REFERENCES job(job_id),
+    sk_id UUID NOT NULL REFERENCES skill(sk_id),
+    PRIMARY KEY (job_id, sk_id)
+);
+
+CREATE INDEX idx_requires_skill_sk_id
+    ON requires_skill(sk_id);
+    
+-- =========================================================
+-- 8. PROFILE
+-- =========================================================
+
+CREATE TABLE profile (
+    pf_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    acc_id UUID NOT NULL UNIQUE REFERENCES account(acc_id),
+    pf_expt_sal_min INTEGER CHECK (pf_expt_sal_min >= 0),
+    pos_id UUID REFERENCES position(pos_id),
+    wm_id UUID REFERENCES work_mode(wm_id),
+    loc_id UUID REFERENCES location(loc_id)
+);
+
+
+-- =========================================================
+-- 9. PROFILE SKILLS & PREFERENCES
+-- =========================================================
+
+CREATE TABLE knows_skill (
+    pf_id UUID NOT NULL REFERENCES profile(pf_id),
+    sk_id UUID NOT NULL REFERENCES skill(sk_id),
+    PRIMARY KEY (pf_id, sk_id)
+);
+
+CREATE TABLE targets_location (
+    pf_id UUID NOT NULL REFERENCES profile(pf_id),
+    loc_id UUID NOT NULL REFERENCES location(loc_id),
+    PRIMARY KEY (pf_id, loc_id)
+);
+
+CREATE TABLE prefers_work_mode (
+    pf_id UUID NOT NULL REFERENCES profile(pf_id),
+    wm_id UUID NOT NULL REFERENCES work_mode(wm_id),
+    PRIMARY KEY (pf_id, wm_id)
+);
+
+CREATE TABLE targets_position (
+    pf_id UUID NOT NULL REFERENCES profile(pf_id),
+    pos_id UUID NOT NULL REFERENCES position(pos_id),
+    PRIMARY KEY (pf_id, pos_id)
+);
+
+-- =========================================================
+-- 10. EDUCATION & QUALIFICATIONS
+-- =========================================================
+
+CREATE TABLE qualifications (
+    qual_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    qual_name VARCHAR(255) NOT NULL UNIQUE
+);
+
+CREATE TABLE education (
+    edu_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    pf_id UUID NOT NULL REFERENCES profile(pf_id),
+    qual_id UUID REFERENCES qualifications(qual_id),
+    edu_name VARCHAR(255),
+    edu_institution VARCHAR(255),
+    edu_issued_at DATE,
+    edu_signed_by VARCHAR(255),
+    edu_path_img TEXT
+);
+
+CREATE INDEX idx_education_profile ON education(pf_id);
+CREATE INDEX idx_education_qualification ON education(qual_id);
+
+
+-- =========================================================
+-- 11. WORK EXPERIENCE
+-- =========================================================
+
+CREATE TABLE work_experience (
+    pf_id UUID NOT NULL REFERENCES profile(pf_id),
+    co_id UUID NOT NULL REFERENCES company(co_id),
+    pos_id UUID NOT NULL REFERENCES position(pos_id),
+
+    we_start_at DATE,
+    we_end_at DATE,
+    we_level VARCHAR(100),
+    CHECK (
+        we_end_at IS NULL
+        OR we_start_at <= we_end_at
+    ),
+    PRIMARY KEY (pf_id, co_id, pos_id, we_start_at)
+);
+
+CREATE INDEX idx_work_experience_profile ON work_experience(pf_id);
+CREATE INDEX idx_work_experience_company ON work_experience(co_id);
+CREATE INDEX idx_work_experience_position ON work_experience(pos_id);
+
+
+-- =========================================================
+-- 12. USER INTERACTION
+-- =========================================================
+
+CREATE TABLE user_interaction (
+    acc_id UUID NOT NULL REFERENCES account(acc_id),
+    job_id UUID NOT NULL REFERENCES job(job_id),
+    action VARCHAR(50) NOT NULL
+    	CHECK (action IN (
+            'interest', 'ignore'
+        )),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_interaction_account
+    ON user_interaction(acc_id);
+CREATE INDEX idx_interaction_job
+    ON user_interaction(job_id);
+CREATE INDEX idx_interaction_created_at
+    ON user_interaction(created_at);
+CREATE INDEX idx_interaction_action
+    ON user_interaction(action);
+
+COMMIT;

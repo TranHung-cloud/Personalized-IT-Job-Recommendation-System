@@ -1,0 +1,80 @@
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+ROOT_DIR = Path(__file__).resolve().parent
+
+load_dotenv(ROOT_DIR / ".env")
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+PROXY_TIMEOUT = int(
+    os.getenv("PROXY_TIMEOUT", "15")
+)
+
+MAX_PROXY_ATTEMPTS = int(
+    os.getenv("MAX_PROXY_ATTEMPTS", "5")
+)
+
+MAX_PAGE_CRAWL_URL = int(
+    os.getenv("MAX_PAGE_CRAWL_URL", "20")
+)
+
+MAX_URL_CRAWL = int(
+    os.getenv("MAX_URL_CRAWL", "400")
+)
+
+MIN_BEST_SCORE = int(
+    os.getenv("MIN_BEST_SCORE", "90")
+)
+
+MIN_SCORE_MARGIN = int(
+    os.getenv("MIN_SCORE_MARGIN", "8")
+)
+
+SHORT_NAME_LENGTH = int(
+    os.getenv("SHORT_NAME_LENGTH", "4")
+)
+
+SHORT_NAME_MIN_SCORE = int(
+    os.getenv("SHORT_NAME_MIN_SCORE", "96")
+)
+
+TOP_N = int(
+    os.getenv("TOP_N", "5")
+)
+
+ITVIEC_URL = os.getenv(
+    "ITVIEC_URL", "https://itviec.com"
+)
+
+ITVIEC_SKILL_URL = os.getenv(
+    "ITVIEC_SKILL_URL", "https://itviec.com/jobs-skill-index"
+)
+
+ITVIEC_POSITION_URL = os.getenv(
+    "ITVIEC_POSITION_URL", "https://itviec.com/jobs-expertise-index"
+)
+
+ITVIEC_COMPANY_URL = os.getenv(
+    "ITVIEC_COMPANY_URL", "https://itviec.com/jobs-company-index"
+)
+
+ITVIEC_JOB_LIST_URL = os.getenv(
+    "ITVIEC_JOB_LIST_URL", "https://itviec.com/jobs"
+)
+
+TOPCV_URL = os.getenv(
+    "TOPCV_URL", "https://topcv.vn"
+)
+
+TOPCV_JOB_LIST_URL = os.getenv(
+    "TOPCV_JOB_LIST_URL", "https://topcv.vn/tim-viec-lam-cong-nghe-thong-tin-cr257"
+)
+
+TOPDEV_URL = os.getenv(
+    "TOPDEV_URL", "https://topdev.vn"
+)
+TOPDEV_JOB_LIST_URL = os.getenv(
+    "TOPDEV_JOB_LIST_URL", "https://topdev.vn/viec-lam"
+)
