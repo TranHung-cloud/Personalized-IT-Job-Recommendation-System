@@ -8,7 +8,20 @@
 #Python / Crawler
 #==============================
 
-crawl/pycache/ crawl/**/.py[cod] crawl/.venv/ crawl/venv/ crawl/env/ crawl/.pytest_cache/ crawl/.mypy_cache/ crawl/.ruff_cache/ crawl/.coverage crawl/htmlcov/ crawl/dist/ crawl/build/ crawl/.egg-info/ crawl/.ipynb_checkpoints/
+crawl/__pycache__/
+crawl/**/.py[cod]
+crawl/.venv/
+crawl/venv/
+crawl/env/
+crawl/.pytest_cache/
+crawl/.mypy_cache/
+crawl/.ruff_cache/
+crawl/.coverage
+crawl/htmlcov/
+crawl/dist/
+crawl/build/
+crawl/.egg-info/
+crawl/.ipynb_checkpoints/
 
 #==============================
 #Java / Spring Boot / Maven
