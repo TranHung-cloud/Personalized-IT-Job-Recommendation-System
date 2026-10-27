@@ -43,7 +43,6 @@ def build_raw_lookup(mode: MODE):
             raise ValueError(f"Invalid mode: {mode}")
 
     df = read_dataframe(query)
-
     name_col, id_col, status_col = df.columns
 
     return {
@@ -120,7 +119,7 @@ def fuzzy_match(raw_name: str, lookup: dict):
         "method": "fuzzy",
     }
 
-def match_raw_name(lookup: dict, raw_name: str, mode: MODE):
+def match_raw_name(lookup: dict, raw_name: str):
     exact_result = exact_match(raw_name, lookup)
     if exact_result:
         return exact_result
