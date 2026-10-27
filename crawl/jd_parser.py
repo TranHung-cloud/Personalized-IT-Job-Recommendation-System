@@ -1,6 +1,8 @@
 import re
 import unicodedata
 from bs4 import BeautifulSoup
+import requests
+from dateutil import parser
 
 COMPANY_PREFIXES = [
     "cong ty co phan",
@@ -215,18 +217,7 @@ EXPERIENCE_PATTERNS = {
     ],
 }
 
-
 def normalize_string(value: str | None) -> str | None:
-    """
-    Chuẩn hóa văn bản, bao gồm:
-    - Loại bỏ HTML tags và CSS inline.
-    - Giải mã HTML entities.
-    - Chuẩn hóa Unicode.
-    - Chuyển thành chữ thường.
-    - Loại bỏ dấu tiếng Việt.
-    - Chuẩn hóa dấu câu và khoảng trắng.
-    """
-
     if value is None:
         return None
 
@@ -397,6 +388,43 @@ def parse_education(text: str | None) -> dict:
     )
 
     return result
+
+def convert_to_vnd(amount, currency):
+    if amount is None or not currency:
+        return None
+
+    currency = currency.upper()
+
+    if currency == "VND":
+        return amount
+
+    url = "https://api.frankfurter.dev/v1/latest"
+    params = {
+        "base": currency,
+        "symbols": "VND"
+    }
+
+    try:
+        response = requests.get(url, params=params, timeout=10)
+        response.raise_for_status()
+
+        data = response.json()
+        rate = data["rates"]["VND"]
+
+        return round(float(amount) * rate, 2)
+
+    except (requests.RequestException, KeyError, ValueError):
+        return None
+
+def format_date(value):
+    if not value:
+        return ""
+
+    try:
+        dt = parser.parse(str(value))
+        return dt.strftime("%d/%m/%Y")
+    except (ValueError, TypeError, OverflowError):
+        return ""
 
 def main():
     text = """
