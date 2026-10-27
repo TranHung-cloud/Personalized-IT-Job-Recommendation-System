@@ -19,7 +19,7 @@ ON CONFLICT (role_name) DO NOTHING;
 INSERT INTO site (site_name)
 VALUES
     ('TopCV'),
-    ('TopDev'),
+    ('VietnamWorks'),
     ('ITviec')
 ON CONFLICT (site_name) DO NOTHING;
 
@@ -40,5 +40,454 @@ VALUES
     ('Giáo sư'),
     ('Khác')
 ON CONFLICT (qual_name) DO NOTHING;
+
+-- ========================================================= 
+-- 4. WORK MODE
+-- =========================================================
+
+INSERT INTO work_mode (wm_name) 
+VALUES 
+    ('Tại văn phòng'), 
+    ('Từ xa'), 
+    ('Kết hợp'), 
+    ('Linh hoạt'), 
+    ('Khác') 
+ON CONFLICT (wm_name) DO NOTHING;
+
+-- ========================================================= 
+-- 5. WORK MODE RAW 
+-- =========================================================
+
+WITH work_mode_mapping (raw_name, canonical_name) AS (
+    VALUES 
+    -- ================================================= 
+    -- ON-SITE 
+    -- ================================================= 
+    ('tai van phong', 'Tại văn phòng'), 
+    ('lam viec tai van phong', 'Tại văn phòng'), 
+    ('onsite', 'Tại văn phòng'), 
+    ('on-site', 'Tại văn phòng'), 
+    ('on site', 'Tại văn phòng'), 
+    ('office', 'Tại văn phòng'), 
+    ('office-based', 'Tại văn phòng'), 
+    ('office based', 'Tại văn phòng'), 
+    ('work from office', 'Tại văn phòng'), 
+    ('work at office', 'Tại văn phòng'), 
+    ('in-office', 'Tại văn phòng'), 
+    ('in office', 'Tại văn phòng'), 
+    ('at the office', 'Tại văn phòng'), 
+    ('office working', 'Tại văn phòng'), 
+    ('100 onsite', 'Tại văn phòng'), 
+    ('100 onsite', 'Tại văn phòng'), 
+    ('full onsite', 'Tại văn phòng'), 
+    ('fully onsite', 'Tại văn phòng'),
+
+    -- =================================================
+    -- REMOTE
+    -- =================================================
+    ('tu xa', 'Từ xa'),
+    ('lam viec tu xa', 'Từ xa'),
+    ('remote', 'Từ xa'),
+    ('remote work', 'Từ xa'),
+    ('remote working', 'Từ xa'),
+    ('work remotely', 'Từ xa'),
+    ('fully remote', 'Từ xa'),
+    ('full remote', 'Từ xa'),
+    ('100 remote', 'Từ xa'),
+    ('100 remote', 'Từ xa'),
+    ('work from home', 'Từ xa'),
+    ('wfh', 'Từ xa'),
+    ('work from anywhere', 'Từ xa'),
+    ('distributed team', 'Từ xa'),
+    ('distributed work', 'Từ xa'),
+    ('home-based', 'Từ xa'),
+    ('home based', 'Từ xa'),
+    ('lam viec tai nha', 'Từ xa'),
+
+    -- =================================================
+    -- HYBRID
+    -- =================================================
+    ('ket hop', 'Kết hợp'),
+    ('lam viec ket hop', 'Kết hợp'),
+    ('hybrid', 'Kết hợp'),
+    ('hybrid work', 'Kết hợp'),
+    ('hybrid working', 'Kết hợp'),
+    ('hybrid model', 'Kết hợp'),
+    ('hybrid working model', 'Kết hợp'),
+    ('office and remote', 'Kết hợp'),
+    ('remote and office', 'Kết hợp'),
+    ('partially remote', 'Kết hợp'),
+    ('partially onsite', 'Kết hợp'),
+    ('partially on-site', 'Kết hợp'),
+    ('flexible hybrid', 'Kết hợp'),
+
+    -- =================================================
+    -- FLEXIBLE
+    -- =================================================
+    ('linh hoat', 'Linh hoạt'),
+    ('flexible', 'Linh hoạt'),
+    ('flexible working', 'Linh hoạt'),
+    ('flexible work arrangement', 'Linh hoạt'),
+    ('flexible work location', 'Linh hoạt'),
+    ('flexible location', 'Linh hoạt'),
+    ('flexible workplace', 'Linh hoạt'),
+
+    -- =================================================
+    -- OTHER
+    -- =================================================
+    ('khac', 'Khác'),
+    ('other', 'Khác'),
+    ('others', 'Khác'),
+    ('not specified', 'Khác'),
+    ('unspecified', 'Khác')
+
+
+), 
+resolved AS (
+     SELECT 
+        m.raw_name, 
+        w.wm_id 
+    FROM work_mode_mapping m 
+    JOIN work_mode w 
+        ON w.wm_name = m.canonical_name 
+) 
+INSERT INTO work_mode_raw (
+     wm_raw_name, 
+     wm_raw_count, 
+     wm_raw_status, 
+     wm_id 
+) 
+SELECT 
+    raw_name, 
+    1, 
+    'mapped', 
+    wm_id 
+FROM resolved 
+ON CONFLICT (wm_raw_name) DO NOTHING;
+
+-- =========================================================
+-- 6. LOCATION
+-- =========================================================
+
+INSERT INTO location (loc_name)
+VALUES
+    ('Hà Nội'),
+    ('Thành phố Hồ Chí Minh'),
+    ('Đà Nẵng'),
+    ('Hải Phòng'),
+    ('Cần Thơ'),
+    ('Huế'),
+    ('Nha Trang'),
+    ('Đà Lạt'),
+    ('Vũng Tàu'),
+    ('Biên Hòa'),
+    ('Thủ Dầu Một'),
+    ('Hạ Long'),
+    ('Bắc Ninh'),
+    ('Hải Dương'),
+    ('Nam Định'),
+    ('Thái Nguyên'),
+    ('Việt Trì'),
+    ('Thanh Hóa'),
+    ('Vinh'),
+    ('Đồng Hới'),
+    ('Quy Nhơn'),
+    ('Pleiku'),
+    ('Buôn Ma Thuột'),
+    ('Tuy Hòa'),
+    ('Phan Rang - Tháp Chàm'),
+    ('Phan Thiết'),
+    ('Long Xuyên'),
+    ('Rạch Giá'),
+    ('Cà Mau'),
+    ('Sóc Trăng'),
+    ('Bạc Liêu'),
+    ('Mỹ Tho'),
+    ('Tân An'),
+    ('Bến Tre'),
+    ('Trà Vinh'),
+    ('Vĩnh Long'),
+    ('Cao Lãnh'),
+    ('Sa Đéc'),
+    ('Châu Đốc'),
+    ('Hà Tiên'),
+    ('Uông Bí'),
+    ('Cẩm Phả'),
+    ('Móng Cái'),
+    ('Lào Cai'),
+    ('Yên Bái'),
+    ('Sơn La'),
+    ('Điện Biên Phủ'),
+    ('Lạng Sơn'),
+    ('Cao Bằng'),
+    ('Tuyên Quang'),
+    ('Hà Giang'),
+    ('Bắc Giang'),
+    ('Hưng Yên'),
+    ('Phủ Lý'),
+    ('Ninh Bình'),
+    ('Tam Kỳ'),
+    ('Quảng Ngãi'),
+    ('Đông Hà'),
+    ('Lai Châu'),
+    ('Kon Tum'),
+    ('Gia Nghĩa'),
+    ('Bảo Lộc'),
+    ('Tây Ninh'),
+    ('Đồng Xoài'),
+    ('Tân Uyên'),
+    ('Dĩ An'),
+    ('Thuận An'),
+    ('Phú Quốc')
+ON CONFLICT (loc_name) DO NOTHING;
+
+
+-- =========================================================
+-- 7. LOCATION RAW
+-- =========================================================
+
+WITH location_mapping (raw_name, canonical_name) AS (
+    VALUES
+        -- Hà Nội
+        ('ha noi', 'Hà Nội'),
+        ('hanoi', 'Hà Nội'),
+
+        -- Thành phố Hồ Chí Minh
+        ('thanh pho ho chi minh', 'Thành phố Hồ Chí Minh'),
+        ('tp. ho chi minh', 'Thành phố Hồ Chí Minh'),
+        ('tp ho chi minh', 'Thành phố Hồ Chí Minh'),
+        ('tp.hcm', 'Thành phố Hồ Chí Minh'),
+        ('ho chi minh', 'Thành phố Hồ Chí Minh'),
+        ('ho chi minh city', 'Thành phố Hồ Chí Minh'),
+        ('hcmc', 'Thành phố Hồ Chí Minh'),
+        ('saigon', 'Thành phố Hồ Chí Minh'),
+        ('sai gon', 'Thành phố Hồ Chí Minh'),
+
+        -- Đà Nẵng
+        ('da nang', 'Đà Nẵng'),
+        ('danang', 'Đà Nẵng'),
+
+        -- Hải Phòng
+        ('hai phong', 'Hải Phòng'),
+        ('haiphong', 'Hải Phòng'),
+
+        -- Cần Thơ
+        ('can tho', 'Cần Thơ'),
+        ('cantho', 'Cần Thơ'),
+
+        -- Huế
+        ('hue', 'Huế'),
+        ('thua thien hue', 'Huế'),
+
+        -- Nha Trang
+        ('nha trang', 'Nha Trang'),
+
+        -- Đà Lạt
+        ('da lat', 'Đà Lạt'),
+        ('dalat', 'Đà Lạt'),
+
+        -- Vũng Tàu
+        ('vung tau', 'Vũng Tàu'),
+
+        -- Biên Hòa
+        ('bien hoa', 'Biên Hòa'),
+
+        -- Thủ Dầu Một
+        ('thu dau mot', 'Thủ Dầu Một'),
+
+        -- Hạ Long
+        ('ha long', 'Hạ Long'),
+
+        -- Bắc Ninh
+        ('bac ninh', 'Bắc Ninh'),
+
+        -- Hải Dương
+        ('hai duong', 'Hải Dương'),
+
+        -- Nam Định
+        ('nam dinh', 'Nam Định'),
+
+        -- Thái Nguyên
+        ('thai nguyen', 'Thái Nguyên'),
+
+        -- Việt Trì
+        ('viet tri', 'Việt Trì'),
+
+        -- Thanh Hóa
+        ('thanh hoa', 'Thanh Hóa'),
+
+        -- Vinh
+        ('vinh', 'Vinh'),
+
+        -- Đồng Hới
+        ('dong hoi', 'Đồng Hới'),
+
+        -- Quy Nhơn
+        ('quy nhon', 'Quy Nhơn'),
+
+        -- Pleiku
+        ('pleiku', 'Pleiku'),
+
+        -- Buôn Ma Thuột
+        ('buon ma thuot', 'Buôn Ma Thuột'),
+
+        -- Tuy Hòa
+        ('tuy hoa', 'Tuy Hòa'),
+
+        -- Phan Rang - Tháp Chàm
+        ('phan rang - thap cham', 'Phan Rang - Tháp Chàm'),
+        ('phan rang', 'Phan Rang - Tháp Chàm'),
+
+        -- Phan Thiết
+        ('phan thiet', 'Phan Thiết'),
+
+        -- Long Xuyên
+        ('long xuyen', 'Long Xuyên'),
+
+        -- Rạch Giá
+        ('rach gia', 'Rạch Giá'),
+
+        -- Cà Mau
+        ('ca mau', 'Cà Mau'),
+
+        -- Sóc Trăng
+        ('soc trang', 'Sóc Trăng'),
+
+        -- Bạc Liêu
+        ('bac lieu', 'Bạc Liêu'),
+
+        -- Mỹ Tho
+        ('my tho', 'Mỹ Tho'),
+
+        -- Tân An
+        ('tan an', 'Tân An'),
+
+        -- Bến Tre
+        ('ben tre', 'Bến Tre'),
+
+        -- Trà Vinh
+        ('tra vinh', 'Trà Vinh'),
+
+        -- Vĩnh Long
+        ('vinh long', 'Vĩnh Long'),
+
+        -- Cao Lãnh
+        ('cao lanh', 'Cao Lãnh'),
+
+        -- Sa Đéc
+        ('sa dec', 'Sa Đéc'),
+
+        -- Châu Đốc
+        ('chau doc', 'Châu Đốc'),
+
+        -- Hà Tiên
+        ('ha tien', 'Hà Tiên'),
+
+        -- Uông Bí
+        ('uong bi', 'Uông Bí'),
+
+        -- Cẩm Phả
+        ('cam pha', 'Cẩm Phả'),
+
+        -- Móng Cái
+        ('mong cai', 'Móng Cái'),
+
+        -- Lào Cai
+        ('lao cai', 'Lào Cai'),
+
+        -- Yên Bái
+        ('yen bai', 'Yên Bái'),
+
+        -- Sơn La
+        ('son la', 'Sơn La'),
+
+        -- Điện Biên Phủ
+        ('dien bien phu', 'Điện Biên Phủ'),
+
+        -- Lạng Sơn
+        ('lang son', 'Lạng Sơn'),
+
+        -- Cao Bằng
+        ('cao bang', 'Cao Bằng'),
+
+        -- Tuyên Quang
+        ('tuyen quang', 'Tuyên Quang'),
+
+        -- Hà Giang
+        ('ha giang', 'Hà Giang'),
+
+        -- Bắc Giang
+        ('bac giang', 'Bắc Giang'),
+
+        -- Hưng Yên
+        ('hung yen', 'Hưng Yên'),
+
+        -- Phủ Lý
+        ('phu ly', 'Phủ Lý'),
+
+        -- Ninh Bình
+        ('ninh binh', 'Ninh Bình'),
+
+        -- Tam Kỳ
+        ('tam ky', 'Tam Kỳ'),
+
+        -- Quảng Ngãi
+        ('quang ngai', 'Quảng Ngãi'),
+
+        -- Đông Hà
+        ('dong ha', 'Đông Hà'),
+
+        -- Lai Châu
+        ('lai chau', 'Lai Châu'),
+
+        -- Kon Tum
+        ('kon tum', 'Kon Tum'),
+
+        -- Gia Nghĩa
+        ('gia nghia', 'Gia Nghĩa'),
+
+        -- Bảo Lộc
+        ('bao loc', 'Bảo Lộc'),
+
+        -- Tây Ninh
+        ('tay ninh', 'Tây Ninh'),
+
+        -- Đồng Xoài
+        ('dong xoai', 'Đồng Xoài'),
+
+        -- Tân Uyên
+        ('tan uyen', 'Tân Uyên'),
+
+        -- Dĩ An
+        ('di an', 'Dĩ An'),
+
+        -- Thuận An
+        ('thuan an', 'Thuận An'),
+
+        -- Phú Quốc
+        ('phu quoc', 'Phú Quốc'),
+        ('phu quoc island', 'Phú Quốc')
+),
+resolved AS (
+    SELECT
+        m.raw_name,
+        l.loc_id
+    FROM location_mapping m
+    JOIN location l
+        ON l.loc_name = m.canonical_name
+)
+INSERT INTO location_raw (
+    loc_raw_name,
+    loc_raw_count,
+    loc_raw_status,
+    loc_id
+)
+SELECT
+    raw_name,
+    1,
+    'mapped',
+    loc_id
+FROM resolved
+ON CONFLICT (loc_raw_name) DO NOTHING;
 
 COMMIT;
