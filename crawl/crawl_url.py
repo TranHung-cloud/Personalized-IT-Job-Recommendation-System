@@ -12,14 +12,90 @@ from crawl.proxy_manager import (
 from crawl.config import (
     TOPCV_JOB_LIST_URL,
     ITVIEC_JOB_LIST_URL,
-    TOPDEV_JOB_LIST_URL,
+    VIETNAMWORKS_URL,
+    VIETNAMWORKS_JOB_LIST_URL,
     MAX_PAGE_CRAWL_URL,
-    MAX_URL_CRAWL
+    MAX_URL_CRAWL,
+    PROXY_MODE,
+    MODE
 )
 from crawl.database import (
     execute_query,
     close_connection
 )
+
+def VietnamWorks_search_body(page_num):
+    return {
+        "userId": 0,
+        "query": "",
+        "filter": [
+            {
+            "field": "jobFunction",
+            "value": "[{\"parentId\":5,\"childrenIds\":[-1]}]"
+            }
+        ],
+        "ranges": [],
+        "order": [],
+        "hitsPerPage": 50,
+        "page": page_num,
+        "retrieveFields": [
+            "address",
+            "benefits",
+            "jobTitle",
+            "salaryMax",
+            "isSalaryVisible",
+            "jobLevelVI",
+            "isShowLogo",
+            "salaryMin",
+            "companyLogo",
+            "userId",
+            "jobLevel",
+            "jobLevelId",
+            "jobId",
+            "jobUrl",
+            "companyId",
+            "approvedOn",
+            "isAnonymous",
+            "alias",
+            "expiredOn",
+            "industries",
+            "industriesV3",
+            "workingLocations",
+            "services",
+            "companyName",
+            "salary",
+            "onlineOn",
+            "onlineOnText",
+            "simpleServices",
+            "visibilityDisplay",
+            "isShowLogoInSearch",
+            "priorityOrder",
+            "skills",
+            "profilePublishedSiteMask",
+            "jobDescription",
+            "jobRequirement",
+            "prettySalary",
+            "requiredCoverLetter",
+            "languageSelectedVI",
+            "languageSelected",
+            "languageSelectedId",
+            "typeWorkingId",
+            "createdOn",
+            "isAdrLiteJob",
+            "applicantSignal",
+            "numOfApplications",
+            "numberOfRecruits",
+            "exposureStatus",
+            "exposureStatusV2",
+            "jobPriceVnd",
+            "isTopPriorityV4",
+            "topPriorityType"
+        ],
+        "summaryVersion": "",
+        "variants": "test",
+        "variants_v2": "test",
+        "variants_v4": "test-2-allocation-v4"
+        }
 
 def crawl_topcv_url():
     site = execute_query("SELECT site_id FROM site WHERE site_name = %s", ("TopCV",), fetch="one")
@@ -37,8 +113,10 @@ def crawl_topcv_url():
         found_count = 0
         while(page_number <= MAX_PAGE_CRAWL_URL and found_count <= MAX_URL_CRAWL):
             if begin:
-                proxy = get_working_proxy_forever(TOPCV_JOB_LIST_URL)
-                print(f"[MAIN] Đang sử dụng proxy: {proxy}")
+                proxy = None
+                if PROXY_MODE == MODE.PROXY:
+                    proxy = get_working_proxy_forever(TOPCV_JOB_LIST_URL)
+                    print(f"[MAIN] Đang sử dụng proxy: {proxy}")
 
                 context = create_browser_context(p, proxy)
                 page = (
@@ -54,7 +132,6 @@ def crawl_topcv_url():
                     wait_until="domcontentloaded",
                     timeout=60000
                 )
-                time.sleep(86400)
                 wait_and_scroll(page)
                 locator = page.locator('script[type="application/ld+json"]')
                 script_content = locator.all_text_contents()
@@ -96,7 +173,6 @@ def crawl_topcv_url():
                 begin = True
                 continue
             page_number += 1
-    close_connection()
 
 def crawl_itviec_url():
     site = execute_query("SELECT site_id FROM site WHERE site_name = %s", ("ITviec",), fetch="one")
@@ -114,8 +190,10 @@ def crawl_itviec_url():
         while(page_number <= MAX_PAGE_CRAWL_URL and found_count <= MAX_URL_CRAWL):
             try:
                 if begin:
-                    proxy = get_working_proxy_forever(ITVIEC_JOB_LIST_URL)
-                    print(f"[MAIN] Đang sử dụng proxy: {proxy}")
+                    proxy = None
+                    if PROXY_MODE == MODE.PROXY:
+                        proxy = get_working_proxy_forever(ITVIEC_JOB_LIST_URL)
+                        print(f"[MAIN] Đang sử dụng proxy: {proxy}")
 
                     context = create_browser_context(p, proxy)
                     page = (
@@ -168,23 +246,18 @@ def crawl_itviec_url():
                 context.close()
                 continue
             page_number += 1
-    close_connection()
 
-def crawl_topdev_url():
-    SITE = execute_query("SELECT site_id FROM site WHERE site_name = %s", ("TopDev",), fetch="one")
+def crawl_vietnamworks_url():
+    SITE = execute_query("SELECT site_id FROM site WHERE site_name = %s", ("VietnamWorks",), fetch="one")
     if not SITE:
-        print("[MAIN] Không tìm thấy site TopDev trong cơ sở dữ liệu.")
+        print("[MAIN] Không tìm thấy site VietnamWorks trong cơ sở dữ liệu.")
         return
     site_id = SITE["site_id"]
 
     remain_urls = {
         row["src_url"] for row in execute_query("SELECT src_url FROM source WHERE site_id = %s", (site_id,), fetch=True)
     }
-    CATS = "2,3,4,5,6,7,8,9,10,11,12,13,67"
-
-    PUSH = re.compile(
-        r'self\.__next_f\.push\(\[1,("(?:[^"\\]|\\.)*")\]\)'
-    )
+    
     with sync_playwright() as p:
         page_number = 1
         found_count = 0
@@ -192,34 +265,41 @@ def crawl_topdev_url():
 
         while page_number <= MAX_PAGE_CRAWL_URL and found_count <= MAX_URL_CRAWL:
             if begin:
-                proxy = get_working_proxy_forever(TOPDEV_JOB_LIST_URL)
-                print(f"[MAIN] Đang sử dụng proxy: {proxy}")
+                proxy = None
+                if PROXY_MODE == MODE.PROXY:
+                    proxy = get_working_proxy_forever(VIETNAMWORKS_URL)
+                    print(f"[MAIN] Đang sử dụng proxy: {proxy}")
 
                 context = create_browser_context(p, proxy)
                 page = context.pages[0] if context.pages else context.new_page()
                 begin = False
-
             try:
-                url = f"{TOPDEV_JOB_LIST_URL}?job_categories_ids={CATS}&page={page_number}"
-                page.goto(url, wait_until="domcontentloaded", timeout=60000)
-                html = page.content()
+                page.goto(VIETNAMWORKS_URL, wait_until="domcontentloaded", timeout=60000)
+                body = VietnamWorks_search_body(page_number-1)
+                response = page.request.post(
+                    VIETNAMWORKS_JOB_LIST_URL,
+                    data=body,
+                    headers={
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+                    timeout=60000
+                )
+                wait_and_scroll(page)
 
-                payload = "".join(json.loads(m) for m in PUSH.findall(html))
-                dec = json.JSONDecoder()
-                jobs = []
+                if not response.ok:
+                    print(f"[MAIN] Lỗi khi gửi yêu cầu POST đến VietnamWorks: {response.status}")
+                    break
 
-                for m in re.finditer(r'\{"jobs":\[', payload):
-                    try:
-                        obj, _ = dec.raw_decode(payload, m.start())
-                    except json.JSONDecodeError:
-                        continue
+                result = response.json()
+                jobs = result.get("data", [])
 
-                    if "meta" in obj:
-                        jobs, meta = obj["jobs"], obj["meta"]
-                        break
+                if not isinstance(jobs, list):
+                    print("[MAIN] Dữ liệu jobs trả về không hợp lệ.")
+                    break
 
-                for j in jobs:
-                    job_url = j.get("detail_url")
+                for job in jobs:
+                    job_url = job.get("jobUrl")
 
                     if not job_url or job_url in remain_urls:
                         continue
@@ -231,27 +311,31 @@ def crawl_topdev_url():
                     )
                     found_count += 1
                 print(f"[MAIN] URL công việc đã thu thập đến trang {page_number}: {found_count}")
-                if not meta or page_number >= meta.get("last_page", MAX_PAGE_CRAWL_URL):
+                if len(jobs) < 50:
                     break
-
                 page_number += 1
 
             except Exception as e:
                 print(f"[MAIN] Lỗi trang {page_number}: {e}")
                 context.close()
                 begin = True
-    close_connection()
 
 def main():
-    crawl_topcv_url()
-    time.sleep(120)
+    try:
+        print("[MAIN] Bắt đầu thu thập URL từ topcv.")
+        crawl_topcv_url()
+        time.sleep(30)
 
-    crawl_itviec_url()
-    time.sleep(120)
+        print("[MAIN] Bắt đầu thu thập URL từ itviec.")
+        crawl_itviec_url()
+        time.sleep(30)
 
-    crawl_topdev_url()
+        print("[MAIN] Bắt đầu thu thập URL từ vietnamworks.")
+        crawl_vietnamworks_url()
 
-    print("[MAIN] Đã hoàn thành tất cả website.")
+        print("[MAIN] Đã hoàn thành tất cả website.")
+    finally:
+        close_connection()
 
 if __name__ == "__main__":
     main()
