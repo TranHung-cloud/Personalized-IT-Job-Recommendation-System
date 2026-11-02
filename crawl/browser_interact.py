@@ -1,5 +1,11 @@
 import tempfile
 import random
+import playwright.sync_api 
+
+from crawl.config import (
+    PROXY_MODE,
+    MODE
+)
 
 def wait_and_scroll(page, minimum=4, maximum=10):
     try:
@@ -31,21 +37,28 @@ def wait_and_scroll(page, minimum=4, maximum=10):
     except Exception as e:
         print(f"[WAIT & SCROLL] {e}")
 
-def create_browser_context(playwright, proxy):
+def create_browser_context(playwright, proxy=None):
     profile_dir = tempfile.mkdtemp(prefix="chrome_profile_")
-    return playwright.chromium.launch_persistent_context(
-        user_data_dir=profile_dir,
-        channel="chrome",
-        headless=False, #github action True
-        locale="vi-VN",
-        timezone_id="Asia/Ho_Chi_Minh",
-        viewport={
+
+    context_options = {
+        "user_data_dir": profile_dir,
+        "channel": "chrome",
+        "headless": False,
+        "locale": "vi-VN",
+        "timezone_id": "Asia/Ho_Chi_Minh",
+        "viewport": {
             "width": 1366,
             "height": 768,
         },
-        proxy={"server": proxy},
-        args=[
+        "args": [
             "--no-sandbox",
             "--disable-dev-shm-usage",
         ]
-    )
+    }
+
+    if PROXY_MODE == MODE.PROXY:
+        if not proxy:
+            raise ValueError("Proxy mode yêu cầu proxy")
+        context_options["proxy"] = {"server": proxy}
+
+    return playwright.chromium.launch_persistent_context(**context_options)
