@@ -12,7 +12,7 @@ from crawl.config import (
 from crawl.jd_parser import normalize_string
 from crawl.database import execute_query
 
-MODE = Literal["pos", "wm", "loc", "sk"]
+MODE = Literal["pos", "wm", "loc", "sk", "com"]
 
 def build_raw_lookup(mode: MODE):
     match mode:
@@ -39,6 +39,11 @@ def build_raw_lookup(mode: MODE):
                 SELECT sk_raw_name, sk_id, sk_raw_status
                 FROM skill_raw
                 WHERE sk_raw_status IN ('mapped', 'review', 'pending')
+            """
+        case "com":
+            query = """
+                SELECT co_name_norm, co_id, 'mapped' as co_status
+                FROM company
             """
         case _:
             raise ValueError(f"Invalid mode: {mode}")
@@ -130,8 +135,36 @@ def fuzzy_match(raw_name: str, lookup: dict):
     }
 
 def match_raw_name(lookup: dict, raw_name: str, mode: MODE):
-    result = exact_match(raw_name, lookup)
+    if mode == "com":
+        result = exact_match(raw_name, lookup)
+        if result:
+            return result
 
+        result = fuzzy_match(raw_name, lookup)
+
+        if result and result["status"] == "mapped":
+            return result
+
+        row = execute_query(
+            """
+                INSERT INTO company (co_name, co_name_norm)
+                VALUES (%s, %s)
+                RETURNING co_id
+            """,
+            (raw_name, normalize_string(raw_name)),
+            fetch="one"
+        )
+
+        co_id = row["co_id"]
+
+        return {
+            "id": co_id,
+            "name": normalize_string(raw_name),
+            "status": "new",
+            "method": None if result is None else result["method"],
+        }
+
+    result = exact_match(raw_name, lookup)
     if result:
         match mode:
             case "pos":
