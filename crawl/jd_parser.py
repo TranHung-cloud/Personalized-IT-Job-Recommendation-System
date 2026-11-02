@@ -3,6 +3,7 @@ import unicodedata
 from bs4 import BeautifulSoup
 import requests
 from dateutil import parser
+from datetime import datetime
 
 COMPANY_PREFIXES = [
     "cong ty co phan",
@@ -455,15 +456,29 @@ def convert_to_vnd(amount, currency):
     except (requests.RequestException, KeyError, ValueError):
         return None
 
-def format_date(value):
-    if not value:
-        return ""
+def format_date(date_str: str | None):
+    if not date_str:
+        return None
 
-    try:
-        dt = parser.parse(str(value))
-        return dt.strftime("%d/%m/%Y")
-    except (ValueError, TypeError, OverflowError):
-        return ""
+    formats = [
+        "%Y-%m-%d",
+        "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%dT%H:%M:%S.%f",
+        "%d/%m/%Y",
+        "%m/%d/%Y",
+    ]
+
+    for fmt in formats:
+        try:
+            return datetime.strptime(
+                date_str[:26] if "T" in date_str else date_str,
+                fmt
+            ).date()
+        except ValueError:
+            continue
+
+    return None
+
 
 def main():
     text = """
