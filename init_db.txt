@@ -215,6 +215,7 @@ CREATE TABLE job (
         CHECK (job_sal_max >= 0),
     job_sal_nego BOOLEAN NOT NULL DEFAULT FALSE,
     job_desc TEXT,
+    job_req TEXT,
     job_benefit TEXT,
     job_expired_at TIMESTAMPTZ,
     job_posted_at TIMESTAMPTZ,
