@@ -24,7 +24,17 @@ pool = ConnectionPool(
     check=ConnectionPool.check_connection,
 )
 
-def execute_query(query, params=None, fetch=False):
+def execute_query(query, params=None, fetch=False, conn=None):
+    if conn is not None:
+        with conn.cursor() as cur:
+            cur.execute(query, params)
+
+            if fetch:
+                if fetch == "one":
+                    return cur.fetchone()
+                return cur.fetchall()
+
+            return cur.rowcount
     with pool.connection() as conn:
         with conn.cursor() as cur:
             cur.execute(query, params)
