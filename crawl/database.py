@@ -37,9 +37,7 @@ def execute_query(query, params=None, fetch=False):
             return cur.rowcount
 
 def read_dataframe(query, params=None):
-    with pool.connection() as conn:
-        with conn.cursor() as cur:
-            rows = execute_query(query, params=params, fetch=True)
+    rows = execute_query(query, params=params, fetch=True)
     return pd.DataFrame(rows)
 
 def close_connection():
