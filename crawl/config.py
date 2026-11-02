@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from enum import Enum
 
 ROOT_DIR = Path(__file__).resolve().parent
 
@@ -79,3 +80,8 @@ VIETNAMWORKS_URL = os.getenv(
 VIETNAMWORKS_JOB_LIST_URL = os.getenv(
     "VIETNAMWORKS_JOB_LIST_URL", "https://ms.vietnamworks.com/job-search/v1.0/search"
 )
+
+class MODE(Enum):
+    DIRECT = 1
+    PROXY = 2
+PROXY_MODE = MODE.DIRECT
