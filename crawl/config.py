@@ -61,7 +61,7 @@ ITVIEC_COMPANY_URL = os.getenv(
 )
 
 ITVIEC_JOB_LIST_URL = os.getenv(
-    "ITVIEC_JOB_LIST_URL", "https://itviec.com/jobs"
+    "ITVIEC_JOB_LIST_URL", "https://itviec.com/it-jobs"
 )
 
 TOPCV_URL = os.getenv(
@@ -72,9 +72,10 @@ TOPCV_JOB_LIST_URL = os.getenv(
     "TOPCV_JOB_LIST_URL", "https://topcv.vn/tim-viec-lam-cong-nghe-thong-tin-cr257"
 )
 
-TOPDEV_URL = os.getenv(
-    "TOPDEV_URL", "https://topdev.vn"
+VIETNAMWORKS_URL = os.getenv(
+    "VIETNAMWORKS_URL", "https://www.vietnamworks.com/"
 )
-TOPDEV_JOB_LIST_URL = os.getenv(
-    "TOPDEV_JOB_LIST_URL", "https://topdev.vn/viec-lam"
+
+VIETNAMWORKS_JOB_LIST_URL = os.getenv(
+    "VIETNAMWORKS_JOB_LIST_URL", "https://ms.vietnamworks.com/job-search/v1.0/search"
 )
