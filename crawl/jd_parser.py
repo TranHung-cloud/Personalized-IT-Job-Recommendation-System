@@ -158,7 +158,7 @@ EDUCATION_PRIORITY = {
 }
 
 EXPERIENCE_PATTERNS = {
-    # 1. Khoảng kinh nghiệm
+    # 1. Khoảng kinh nghiệm: 2-3 years, 6-12 months
     "range": [
         re.compile(
             r"""
@@ -167,15 +167,20 @@ EXPERIENCE_PATTERNS = {
             (?:-|to|through|den|toi)
             \s*
             (?P<max>\d+(?:\.\d+)?)
-            \s*
-            (?:\+)?\s*
-            (?:years?|yrs?|nam)
+            \s*\+?\s*
+            (?P<unit>
+                years?|yrs?|yr
+                |nam
+                |months?|mos?|mo
+                |thang
+            )
             """,
             re.IGNORECASE | re.VERBOSE,
         ),
     ],
 
-    # 2. Ít nhất N năm:
+    # 2. Ít nhất N năm/tháng:
+    # 2+ years, at least 2 years, minimum of 6 months
     "minimum": [
         re.compile(
             r"""
@@ -183,39 +188,57 @@ EXPERIENCE_PATTERNS = {
                 (?P<plus>\d+(?:\.\d+)?)\s*\+
                 |
                 (?:
-                at\s+least
-                | minimum(?:\s+of)?
-                | toi\s+thieu
-                | it\s+nhat
-                | tu
-                | co\s+tu
-                | co\s+it\s+nhat
-                | toi
+                    at\s+least
+                    | minimum(?:\s+of)?
+                    | toi\s+thieu
+                    | it\s+nhat
+                    | tu
+                    | co\s+tu
+                    | co\s+it\s+nhat
+                    | toi
                 )
                 \s+
                 (?P<minimum>\d+(?:\.\d+)?)
             )
             \s*
-            (?:years?|yrs?|nam)
+            (?P<unit>
+                years?|yrs?|yr
+                |nam
+                |months?|mos?|mo
+                |thang
+            )
             """,
             re.IGNORECASE | re.VERBOSE,
         ),
     ],
 
-    # 3. Trên N năm
+    # 3. Trên N năm/tháng:
+    # more than 2 years, over 6 months
     "greater": [
         re.compile(
             r"""
-            (?:more\s+than|over|above|tren|hon)
+            (?:
+                more\s+than
+                | over
+                | above
+                | tren
+                | hon
+            )
             \s+
             (?P<years>\d+(?:\.\d+)?)
             \s*
-            (?:years?|yrs?|nam)
+            (?P<unit>
+                years?|yrs?|yr
+                |nam
+                |months?|mos?|mo
+                |thang
+            )
             """,
             re.IGNORECASE | re.VERBOSE,
         ),
     ],
 }
+
 
 def normalize_string(value: str | None) -> str | None:
     if value is None:
@@ -306,8 +329,8 @@ def normalize_company(value: str | None) -> str | None:
 
 def parse_experience(text: str | None) -> dict:
     result = {
-        "min_years": None,
-        "max_years": None,
+        "min_months": None,
+        "max_months": None,
     }
 
     text = normalize_string(text)
@@ -315,50 +338,66 @@ def parse_experience(text: str | None) -> dict:
     if not text:
         return result
 
-    # Chuẩn hóa các dạng dấu gạch nối.
     text = re.sub(r"\s*[-–—]\s*", "-", text)
 
     candidates = []
 
-    # 1. Khoảng kinh nghiệm.
+    # Đơn vị thời gian
+    unit_pattern = r"(?:years?|yrs?|nam|months?|mos?|thang)"
+
+    def to_months(value: str, unit: str) -> int:
+        value = float(value)
+        unit = unit.lower()
+
+        if unit in ("year", "years", "yr", "yrs", "nam"):
+            return round(value * 12)
+
+        return round(value)
+
+    # 1. Khoảng kinh nghiệm: 2-3 years, 6-12 months
     for pattern in EXPERIENCE_PATTERNS["range"]:
         for match in pattern.finditer(text):
-            min_years = float(match.group("min"))
-            max_years = float(match.group("max"))
+            unit = match.group("unit")
 
-            if min_years <= max_years:
+            min_months = to_months(match.group("min"), unit)
+            max_months = to_months(match.group("max"), unit)
+
+            if min_months <= max_months:
                 candidates.append({
-                    "min_years": min_years,
-                    "max_years": max_years,
+                    "min_months": min_months,
+                    "max_months": max_months,
                 })
 
-    # 2. Ít nhất N năm.
+    # 2. Ít nhất N năm/tháng: 2+ years, at least 6 months
     for pattern in EXPERIENCE_PATTERNS["minimum"]:
         for match in pattern.finditer(text):
-            years = match.group("plus") or match.group("minimum")
+            value = match.group("plus") or match.group("minimum")
+            unit = match.group("unit")
 
             candidates.append({
-                "min_years": float(years),
-                "max_years": None,
+                "min_months": to_months(value, unit),
+                "max_months": None,
             })
 
-    # 3. Trên N năm.
+    # 3. Trên N năm/tháng
     for pattern in EXPERIENCE_PATTERNS["greater"]:
         for match in pattern.finditer(text):
             candidates.append({
-                "min_years": float(match.group("years")),
-                "max_years": None,
+                "min_months": to_months(
+                    match.group("years"),
+                    match.group("unit"),
+                ),
+                "max_months": None,
             })
 
-    # 4. Không tìm thấy yêu cầu kinh nghiệm.
     if not candidates:
         return result
 
-    # 5. Lấy yêu cầu có số năm tối thiểu cao nhất.
     return max(
         candidates,
-        key=lambda item: item["min_years"],
+        key=lambda item: item["min_months"],
     )
+
 
 def parse_education(text: str | None) -> dict:
     result = {
