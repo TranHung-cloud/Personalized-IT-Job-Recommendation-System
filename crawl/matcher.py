@@ -10,6 +10,7 @@ from crawl.config import (
     TOP_N,
 )
 from crawl.jd_parser import normalize_string
+from crawl.database import execute_query
 
 MODE = Literal["pos", "wm", "loc", "sk"]
 
@@ -63,6 +64,7 @@ def exact_match(raw_name: str, lookup: dict):
     if existing["id"] is not None:
         return {
             "id": existing["id"],
+            "name": normalized_name,
             "status": existing["status"],
             "method": "exact",
         }
@@ -87,7 +89,12 @@ def fuzzy_match(raw_name: str, lookup: dict):
         limit=TOP_N,
     )
     if not results:
-        return None
+        return {
+            "id": None,
+            "name": normalized_name,
+            "status": "pending",
+            "method": None,
+        }
 
     best_name, best_score, _ = results[0]
     second_best_score = results[1][1] if len(results) > 1 else 0
@@ -102,6 +109,7 @@ def fuzzy_match(raw_name: str, lookup: dict):
     if best_score < min_score:
         return {
             "id": None,
+            "name": normalized_name,
             "status": "pending",
             "method": "fuzzy",
         }
@@ -109,21 +117,89 @@ def fuzzy_match(raw_name: str, lookup: dict):
     if score_margin < MIN_SCORE_MARGIN:
         return {
             "id": candidates[best_name]["id"],
+            "name": normalized_name,
             "status": "review",
             "method": "fuzzy",
         }
 
     return {
         "id": candidates[best_name]["id"],
+        "name": normalized_name,
         "status": "mapped",
         "method": "fuzzy",
     }
 
-def match_raw_name(lookup: dict, raw_name: str):
-    exact_result = exact_match(raw_name, lookup)
-    if exact_result:
-        return exact_result
-    fuzzy_result = fuzzy_match(raw_name, lookup)
-    if fuzzy_result:
-        return fuzzy_result
-    return None
+def match_raw_name(lookup: dict, raw_name: str, mode: MODE):
+    result = exact_match(raw_name, lookup)
+
+    if result:
+        match mode:
+            case "pos":
+                query = """
+                    UPDATE position_raw
+                    SET pos_raw_count = pos_raw_count + 1
+                    WHERE pos_raw_name = %s
+                """
+            case "wm":
+                query = """
+                    UPDATE work_mode_raw
+                    SET wm_raw_count = wm_raw_count + 1
+                    WHERE wm_raw_name = %s
+                """
+            case "loc":
+                query = """
+                    UPDATE location_raw
+                    SET loc_raw_count = loc_raw_count + 1
+                    WHERE loc_raw_name = %s
+                """
+            case "sk":
+                query = """
+                    UPDATE skill_raw
+                    SET sk_raw_count = sk_raw_count + 1
+                    WHERE sk_raw_name = %s
+                """
+        execute_query(query, (result["name"],))
+        return result
+
+    result = fuzzy_match(raw_name, lookup)
+
+    if result is None:
+        result = {
+            "id": None,
+            "name": normalize_string(raw_name),
+            "status": "pending",
+            "method": None,
+        }
+
+    match mode:
+        case "pos":
+            query = """
+                INSERT INTO position_raw
+                (pos_raw_name, pos_id, pos_raw_status)
+                VALUES (%s, %s, %s)
+            """
+        case "wm":
+            query = """
+                INSERT INTO work_mode_raw
+                (wm_raw_name, wm_id, wm_raw_status)
+                VALUES (%s, %s, %s)
+            """
+        case "loc":
+            query = """
+                INSERT INTO location_raw
+                (loc_raw_name, loc_id, loc_raw_status)
+                VALUES (%s, %s, %s)
+            """
+        case "sk":
+            query = """
+                INSERT INTO skill_raw
+                (sk_raw_name, sk_id, sk_raw_status)
+                VALUES (%s, %s, %s)
+            """
+
+    execute_query(
+        query,
+        (result["name"], result["id"], result["status"])
+    )
+
+    return result
