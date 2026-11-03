@@ -222,6 +222,7 @@ CREATE TABLE job (
     
     pos_id UUID REFERENCES position(pos_id),
     wm_id UUID REFERENCES work_mode(wm_id),
+    qual_id UUID REFERENCES qualifications(qual_id),
     CHECK (
         job_exp_min IS NULL
         OR job_exp_max IS NULL
@@ -346,7 +347,7 @@ CREATE TABLE targets_position (
 );
 
 -- =========================================================
--- 10. QUALIFICATIONS & EDUCATION
+-- 10. QUALIFICATIONS & DEGREE
 -- =========================================================
 
 CREATE TABLE qualifications (

@@ -29,17 +29,16 @@ ON CONFLICT (site_name) DO NOTHING;
 -- Danh mục bằng cấp / trình độ học vấn
 -- =========================================================
 
-INSERT INTO qualifications (qual_name)
+INSERT INTO qualifications (qual_name, qual_level)
 VALUES
-    ('Trung cấp'),
-    ('Cao đẳng'),
-    ('Cử nhân'),
-    ('Kỹ sư'),
-    ('Thạc sĩ'),
-    ('Tiến sĩ'),
-    ('Giáo sư'),
-    ('Khác')
-ON CONFLICT (qual_name) DO NOTHING;
+    ('Trung cấp', 1),
+    ('Cao đẳng', 2),
+    ('Cử nhân', 3),
+    ('Kỹ sư', 4),
+    ('Thạc sĩ', 5),
+    ('Tiến sĩ', 6),
+ON CONFLICT (qual_name) DO UPDATE
+SET qual_level = COALESCE(qualifications.qual_level, EXCLUDED.qual_level);
 
 -- ========================================================= 
 -- 4. WORK MODE
