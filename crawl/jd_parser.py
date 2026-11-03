@@ -1,6 +1,6 @@
 import re
 import unicodedata
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString, Tag
 import requests
 from dateutil import parser
 from datetime import datetime
@@ -499,16 +499,69 @@ def format_date(date_str: str | None):
 
     return None
 
+def html_to_text(html: str | None) -> str:
+    if not html:
+        return ""
+
+    soup = BeautifulSoup(html, "html.parser")
+
+    # Remove irrelevant elements
+    for tag in soup(["script", "style", "iframe", "noscript"]):
+        tag.decompose()
+
+    block_tags = {
+        "article", "blockquote", "div", "h1", "h2", "h3", "h4",
+        "li", "ol", "p", "section", "ul",
+    }
+
+    def extract_text(element):
+        result = []
+
+        for child in element.children:
+            if isinstance(child, NavigableString):
+                result.append(str(child))
+                continue
+
+            if not isinstance(child, Tag):
+                continue
+
+            name = child.name.lower()
+            if name == "br":
+                result.append("\n")
+                continue
+
+            content = extract_text(child)
+            if name == "li":
+                content = content.strip()
+                if content:
+                    result.append(f"\n• {content}\n")
+            elif name in block_tags:
+                content = content.strip()
+                if content:
+                    result.append(f"\n{content}\n")
+            else:
+                result.append(content)
+
+        return "".join(result)
+
+    text = extract_text(soup)
+
+    text = re.sub(r"[ \t]+", " ", text)
+    lines = [line.strip() for line in text.splitlines()]
+    return "\n".join(line for line in lines if line)
+
+
 def main():
     text = """
-<p>- Tốt nghiệp Đại học hệ chính quy và có một trong các bằng Đại học/Thạc sĩ/Tiến sĩ các chuyên ngành CNTT/ĐTVT hoặc tương đương, tại:</p><p>+ Các trường Đại học công lập trong nước.</p><p>+ Hoặc các trường Đại học nước ngoài thuộc Top 1.200 trường Đại học tốt nhất tại bảng xếp hạng toàn cầu tại các website: timeshighereducation.com, topuniversities.com, shanghairanking.com, usnews.com Hoặc Top 100 trường Đại học tốt nhất tại BXH National Liberal Arts Colleges Ranking của website: usnews.com.</p><p>+ Hoặc các trường ngoài công lập thuộc Top 100 trường ĐH tốt nhất Việt Nam tại BXH Webometrics (Đối với nhóm ngành CNTT).</p><p>- Ưu tiên ứng viên có kiến thức, kinh nghiệm trong lĩnh vực An ninh mạng.</p><p>- Có các chứng chỉ quốc tế về an ninh mạng là một lợi thế.</p><p>- Tiếng anh: Bậc 3/6 Khung năng lực ngoại ngữ 6 bậc dùng cho Việt Nam hoặc trình độ B hoặc tương đương trình độ B1 khung tham chiếu Châu Âu (CEFR), ưu tiên ứng viên có chứng chỉ tiếng Anh quốc tế: TOEIC, TOEFL, IELTS, ...</p><p>- Độ tuổi: Dưới 35 tuổi.</p>
+<p style="text-align:justify;"><span style="background-color:transparent;"><strong>About the Role</strong></span></p><p style="text-align:justify;"><span style="background-color:transparent;">We are seeking an experienced Senior Solution Architect to lead the review, governance, and quality assurance of strategic technology and transformation deliverables across large-scale enterprise initiatives.</span></p><p style="text-align:justify;"><span style="background-color:transparent;">The role will work closely with business stakeholders, technology teams, external partners, and project leadership to ensure solution deliverables are aligned with business objectives, architecture principles, implementation feasibility, and enterprise standards.</span></p><p style="text-align:justify;"><span style="background-color:transparent;">This position requires strong architecture expertise, structured analytical thinking, stakeholder management capabilities, and the ability to challenge and improve solution outcomes in complex transformation environments.</span></p><p style="text-align:justify;"><span style="background-color:transparent;"><strong>Key Responsibilities</strong></span></p><p style="text-align:justify;"><span style="background-color:transparent;"><strong>Deliverable Governance</strong></span></p><ul><li style="text-align:justify;"><span style="background-color:transparent;">Lead the review and acceptance process for architecture and solution-related deliverables.</span></li><li style="text-align:justify;"><span style="background-color:transparent;">Ensure deliverables comply with enterprise standards, strategic objectives, and quality expectations.</span></li><li style="text-align:justify;"><span style="background-color:transparent;">Assess completeness, consistency, practicality, and implementation readiness of proposed solutions.</span></li><li style="text-align:justify;"><span style="background-color:transparent;">Coordinate reviews among business units, technology teams, project stakeholders, and external partners.</span></li></ul><p style="text-align:justify;"><span style="background-color:transparent;"><strong>Solution Quality Assurance</strong></span></p><ul><li style="text-align:justify;"><span style="background-color:transparent;">Evaluate architecture artefacts, solution designs, operating models, business requirements, technology assessments, and implementation recommendations.</span></li><li style="text-align:justify;"><span style="background-color:transparent;">Identify gaps, risks, assumptions, dependencies, and areas requiring refinement.</span></li><li style="text-align:justify;"><span style="background-color:transparent;">Validate alignment between business needs and proposed technology solutions.</span></li><li style="text-align:justify;"><span style="background-color:transparent;">Ensure recommendations are actionable and suitable for enterprise-scale implementation.</span></li></ul><p style="text-align:justify;"><span style="background-color:transparent;"><strong>Stakeholder Management</strong></span></p><ul><li style="text-align:justify;"><span style="background-color:transparent;">Act as a trusted advisor to project leadership and business stakeholders.</span></li><li style="text-align:justify;"><span style="background-color:transparent;">Facilitate constructive discussions between business, architecture, delivery, and operational teams.</span></li><li style="text-align:justify;"><span style="background-color:transparent;">Drive consensus on architecture decisions and deliverable acceptance criteria.</span></li><li style="text-align:justify;"><span style="background-color:transparent;">Communicate findings and recommendations clearly to both technical and non-technical audiences.</span></li></ul><p style="text-align:justify;"><span style="background-color:transparent;"><strong>Risk and Compliance Review</strong></span></p><ul><li style="text-align:justify;"><span style="background-color:transparent;">Assess potential architecture, operational, integration, security, and technology risks.</span></li><li style="text-align:justify;"><span style="background-color:transparent;">Ensure deliverables align with enterprise governance requirements and internal standards.</span></li><li style="text-align:justify;"><span style="background-color:transparent;">Escalate critical issues and provide recommendations for resolution.</span></li></ul><p style="text-align:justify;"><span style="background-color:transparent;"><strong>Continuous Improvement</strong></span></p><ul><li style="text-align:justify;"><span style="background-color:transparent;">Contribute to the enhancement of architecture governance processes, quality frameworks, and review practices.</span></li><li style="text-align:justify;"><span style="background-color:transparent;">Promote best practices in solution architecture and enterprise transformation initiatives.</span></li></ul>
 """
-    print(f"Original Text: {normalize_string(text)}")
-    experience_info = parse_experience(text)
-    degree_info = parse_education(text)
-    print(f"Experience Info: {experience_info}")
-    print(f"Degree Info: {degree_info}")
-    print(f"date: {format_date('2026-11-21T23:59:59+07:00')}")
+    # print(f"Original Text: {normalize_string(text)}")
+    # experience_info = parse_experience(text)
+    # degree_info = parse_education(text)
+    # print(f"Experience Info: {experience_info}")
+    # print(f"Degree Info: {degree_info}")
+    # print(f"date: {format_date('2026-11-21T23:59:59+07:00')}")
+    print(html_to_text(text))
 
 if __name__ == "__main__":
     main()
