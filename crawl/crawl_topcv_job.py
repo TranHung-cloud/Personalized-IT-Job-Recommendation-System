@@ -33,7 +33,8 @@ from crawl.jd_parser import (
     parse_education,
     convert_to_vnd,
     format_date,
-    normalize_company
+    normalize_company,
+    html_to_text,
 )
 from crawl.matcher import (
     build_raw_lookup,
@@ -285,11 +286,11 @@ def main():
                             salary_max = convert_to_vnd(sal_max_raw, salary_currency)
                         overview = data.get("description")
                         description_sections = split_description(overview)
-                        description = description_sections["Job description"]
-                        requirement = description_sections["Your skills and experience"]
-                        benefits = data.get("jobBenefits") or description_sections[
+                        description = html_to_text(description_sections["Job description"])
+                        requirement = html_to_text(description_sections["Your skills and experience"])
+                        benefits = html_to_text(data.get("jobBenefits") or description_sections[
                             "Why you'll love working here"
-                        ]
+                        ])
                         requirement_skill_names = dictionary_match(
                             lookup_sk, requirement, "sk"
                         )
@@ -410,7 +411,6 @@ def main():
                     "job_skills": skills if skills else None,
                     "job_locations": locations if locations else None,
                 }, raw_jd_json)
-                break
             except Exception as e:
                 begin = True
                 print(f"[MAIN] Lỗi khi crawl URL {url}: {e}")

@@ -33,7 +33,8 @@ from crawl.jd_parser import (
     parse_education,
     convert_to_vnd,
     format_date,
-    normalize_company
+    normalize_company,
+    html_to_text,
 )
 from crawl.matcher import (
     build_raw_lookup,
@@ -253,12 +254,16 @@ def main():
                             salary_max = convert_to_vnd(sal_max_raw, salary_currency)
                         overview = data.get("description")
 
-                        # description
-                        description = split_description(overview).get("Job description")
-                        # requirement
-                        requirement = split_description(overview).get("Your skills and experience")
-                        # benefits
-                        benefits = split_description(overview).get("Why you'll love working here")
+                        description_sections = split_description(overview)
+                        description = html_to_text(
+                            description_sections.get("Job description")
+                        )
+                        requirement = html_to_text(
+                            description_sections.get("Your skills and experience")
+                        )
+                        benefits = html_to_text(
+                            description_sections.get("Why you'll love working here")
+                        )
 
 
                     except json.JSONDecodeError:
