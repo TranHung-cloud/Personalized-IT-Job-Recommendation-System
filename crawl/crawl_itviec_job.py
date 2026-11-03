@@ -67,14 +67,14 @@ def save_job_to_db(job_data, raw_jd_json):
             job_sal_min, job_sal_max, job_sal_nego,
             job_desc, job_benefit,
             job_expired_at, job_posted_at,
-            pos_id, wm_id, job_req
+            pos_id, wm_id, qual_id, job_req
         ) VALUES (
             %(co_id)s, %(src_id)s, %(job_title)s, %(job_title_norm)s,
             %(job_exp_max)s, %(job_exp_min)s,
             %(job_sal_min)s, %(job_sal_max)s, %(job_sal_nego)s,
             %(job_desc)s, %(job_benefit)s,
             %(job_expired_at)s, %(job_posted_at)s,
-            %(pos_id)s, %(wm_id)s, %(job_req)s
+            %(pos_id)s, %(wm_id)s, %(qual_id)s, %(job_req)s
         )
         RETURNING job_id
     """
@@ -344,6 +344,7 @@ def main():
                     "job_posted_at": posted_at,
                     "job_pos": position if position else None,
                     "job_wm": work_mode if work_mode else None,
+                    "qual_id": req_edu["qual_id"],
                     "job_req": requirement,
                     "job_skills": skills if skills else None,
                     "job_locations": locations if locations else None,
