@@ -5,6 +5,10 @@ import requests
 from dateutil import parser
 from datetime import datetime
 
+from crawl.database import (
+    execute_query
+)
+
 COMPANY_PREFIXES = [
     "cong ty co phan",
     "cong ty tnhh mot thanh vien",
@@ -33,7 +37,7 @@ COMPANY_SUFFIXES = [
 ]
 
 EDUCATION_PATTERNS = {
-    "doctorate": [
+    "Tiến sĩ": [
         # Tiếng Việt
         r"\btien si\b",
         r"\btien sy\b",
@@ -53,7 +57,7 @@ EDUCATION_PATTERNS = {
         r"\bdoctoral qualification\b",
     ],
 
-    "master": [
+    "Thạc sĩ": [
         # Tiếng Việt
         r"\bthac si\b",
         r"\bthac sy\b",
@@ -79,7 +83,7 @@ EDUCATION_PATTERNS = {
         r"\bmeng\b",
     ],
 
-    "engineer": [
+    "Kỹ sư": [
         # Tiếng Việt
         r"\bky su\b",
         r"\bbang ky su\b",
@@ -88,6 +92,15 @@ EDUCATION_PATTERNS = {
         r"\bky su phan mem\b",
         r"\bky su dien\b",
         r"\bky su co khi\b",
+        # Tiếng Anh
+        r"\bbachelor of engineering\b",
+        r"\bbachelor of science in engineering\b",
+        r"\bengineering degree\b",
+        r"\bengineer degree\b",
+    ],
+
+    "Cử nhân": [
+        # Tiếng Việt
         r"\bcu nhan\b",
         r"\bbang cu nhan\b",
         r"\btrinh do cu nhan\b",
@@ -99,19 +112,15 @@ EDUCATION_PATTERNS = {
         # Tiếng Anh
         r"\bbachelor degree\b",
         r"\bbachelors degree\b",
-        r"\bbachelor of engineering\b",
-        r"\bbachelor of science in engineering\b",
         r"\bbachelor of arts\b",
         r"\bbachelor of science\b",
         r"\bbachelor of computer science\b",
         r"\bbachelor of information technology\b",
         r"\bundergraduate degree\b",
-        r"\bengineering degree\b",
-        r"\bengineer degree\b",
         r"\bcollege graduate\b",
     ],
 
-    "college": [
+    "Cao đẳng": [
         # Tiếng Việt
         r"\bcao dang\b",
         r"\bbang cao dang\b",
@@ -131,7 +140,7 @@ EDUCATION_PATTERNS = {
         r"\bhnd\b",
     ],
 
-    "intermediate": [
+    "Trung cấp": [
         # Tiếng Việt
         r"\btrung cap\b",
         r"\bbang trung cap\b",
@@ -149,13 +158,22 @@ EDUCATION_PATTERNS = {
     ],
 }
 
+rows = execute_query(
+    "SELECT qual_id, qual_name, qual_level FROM qualifications",
+    fetch=True,
+)
+
+QUALIFICATIONS = {
+    row["qual_name"]: {
+        "id": row["qual_id"],
+        "level": row["qual_level"],
+    }
+    for row in rows
+}
+
 EDUCATION_PRIORITY = {
-    "intermediate": 1,
-    "college": 2,
-    "bachelor": 3,
-    "engineer": 4,
-    "master": 5,
-    "doctorate": 6,
+    name: qualification["level"]
+    for name, qualification in QUALIFICATIONS.items()
 }
 
 EXPERIENCE_PATTERNS = {
@@ -403,6 +421,7 @@ def parse_experience(text: str | None) -> dict:
 def parse_education(text: str | None) -> dict:
     result = {
         "education": None,
+        "qual_id": None,
     }
 
     text = normalize_string(text)
@@ -426,6 +445,7 @@ def parse_education(text: str | None) -> dict:
         candidates,
         key=lambda item: EDUCATION_PRIORITY[item],
     )
+    result["qual_id"] = QUALIFICATIONS[result["education"]]["id"]
 
     return result
 
@@ -460,45 +480,35 @@ def format_date(date_str: str | None):
     if not date_str:
         return None
 
+    try:
+        return datetime.fromisoformat(date_str).date()
+    except ValueError:
+        pass
+
     formats = [
         "%Y-%m-%d",
-        "%Y-%m-%dT%H:%M:%S",
-        "%Y-%m-%dT%H:%M:%S.%f",
         "%d/%m/%Y",
         "%m/%d/%Y",
     ]
 
     for fmt in formats:
         try:
-            return datetime.strptime(
-                date_str[:26] if "T" in date_str else date_str,
-                fmt
-            ).date()
+            return datetime.strptime(date_str, fmt).date()
         except ValueError:
             continue
 
     return None
 
-
 def main():
     text = """
-Must have
-
-    Tốt nghiệp Đại học trở lên các chuyên ngành Kinh tế, Quản trị hoặc chuyên ngành liên quan.
-    Có từ 2 năm kinh nghiệm làm Business Analyst (BA nghiệp vụ)
-    Có kinh nghiệm thực hiện các công việc như khảo sát khách hàng, phân tích yêu cầu, viết tài liệu và phối hợp với đội phát triển, kiểm thử.
-
-Nice to have
-
-    Có hiểu biết hoặc kinh nghiệm liên quan đến một trong các nghiệp vụ như: Tài chính/ Nhân sự/ CRM/ Sản xuất/ Điều hành/ Văn phòng số,...
-    Giao tiếp tốt, tư duy logic, cẩn thận tỉ mỉ
-    Có khả năng ứng dụng các công cụ AI trong công việc
+<p>- Tốt nghiệp Đại học hệ chính quy và có một trong các bằng Đại học/Thạc sĩ/Tiến sĩ các chuyên ngành CNTT/ĐTVT hoặc tương đương, tại:</p><p>+ Các trường Đại học công lập trong nước.</p><p>+ Hoặc các trường Đại học nước ngoài thuộc Top 1.200 trường Đại học tốt nhất tại bảng xếp hạng toàn cầu tại các website: timeshighereducation.com, topuniversities.com, shanghairanking.com, usnews.com Hoặc Top 100 trường Đại học tốt nhất tại BXH National Liberal Arts Colleges Ranking của website: usnews.com.</p><p>+ Hoặc các trường ngoài công lập thuộc Top 100 trường ĐH tốt nhất Việt Nam tại BXH Webometrics (Đối với nhóm ngành CNTT).</p><p>- Ưu tiên ứng viên có kiến thức, kinh nghiệm trong lĩnh vực An ninh mạng.</p><p>- Có các chứng chỉ quốc tế về an ninh mạng là một lợi thế.</p><p>- Tiếng anh: Bậc 3/6 Khung năng lực ngoại ngữ 6 bậc dùng cho Việt Nam hoặc trình độ B hoặc tương đương trình độ B1 khung tham chiếu Châu Âu (CEFR), ưu tiên ứng viên có chứng chỉ tiếng Anh quốc tế: TOEIC, TOEFL, IELTS, ...</p><p>- Độ tuổi: Dưới 35 tuổi.</p>
 """
     print(f"Original Text: {normalize_string(text)}")
     experience_info = parse_experience(text)
     degree_info = parse_education(text)
     print(f"Experience Info: {experience_info}")
     print(f"Degree Info: {degree_info}")
+    print(f"date: {format_date('2026-11-21T23:59:59+07:00')}")
 
 if __name__ == "__main__":
     main()
