@@ -1,5 +1,6 @@
 from crawl.database import read_dataframe
 from typing import Literal
+import re
 from rapidfuzz import fuzz, process
 
 from crawl.config import (
@@ -133,10 +134,9 @@ def fuzzy_match(raw_name: str, lookup: dict):
     }
 
 def match_raw_names(lookup: dict, raw_names: list, mode: MODE):
-    """Match each distinct normalized raw value once, preserving input order."""
     unique_values = []
     seen = set()
-    for raw_value in raw_name or []:
+    for raw_value in raw_names or []:
         normalized_name = normalize_string(raw_value)
         if not normalized_name or normalized_name in seen:
             continue
@@ -227,3 +227,33 @@ def match_raw_names(lookup: dict, raw_names: list, mode: MODE):
             "method": fuzzy_result["method"],
         })
     return results
+
+
+def dictionary_match(lookup: dict, text: str, mode: MODE):
+    normalized_text = normalize_string(text)
+    if not normalized_text:
+        return []
+
+    candidates = [
+        name
+        for name, value in lookup.items()
+        if value.get("status") == "mapped" and value.get("id") is not None
+    ]
+    candidates.sort(key=len, reverse=True)
+
+    matched_names = []
+    matched_spans = []
+    for name in candidates:
+        pattern = re.compile(rf"(?<!\w){re.escape(name)}(?!\w)")
+        for match in pattern.finditer(normalized_text):
+            overlaps_existing = any(
+                match.start() < end and match.end() > start
+                for start, end in matched_spans
+            )
+            if overlaps_existing:
+                continue
+            matched_names.append(name)
+            matched_spans.append((match.start(), match.end()))
+            break
+
+    return matched_names
