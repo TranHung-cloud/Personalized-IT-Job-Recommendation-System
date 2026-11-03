@@ -56,6 +56,8 @@ def split_description(description):
     return result
 
 def save_job_to_db(job_data):
+    job_data["pos_id"] = job_data["job_pos"]["id"] if job_data.get("job_pos") and pd.notna(job_data["job_pos"]["id"]) else None
+    job_data["wm_id"] = job_data["job_wm"]["id"] if job_data.get("job_wm") and pd.notna(job_data["job_wm"]["id"]) else None
     query = """
         INSERT INTO job (
             co_id, src_id, job_title, job_title_norm,
@@ -84,32 +86,54 @@ def save_job_to_db(job_data):
         execute_query(
             """
             UPDATE source
-            SET src_crawled_at = NOW()
+            SET src_crawled_at = NOW(),
+            pos_raw_name = %s,
+            wm_raw_name = %s
             WHERE src_id = %s
             """,
-            (job_data["src_id"],),
+            (job_data["job_pos"]["name"], job_data["job_wm"]["name"], job_data["src_id"]),
             conn=conn
         )
 
-        for skill_id in job_data.get("job_skills") or []:
+        for skill in job_data.get("job_skills") or []:
             execute_query(
                 """
-                INSERT INTO job_skill (job_id, sk_id)
+                INSERT INTO source_skill_raw
+                (src_id, sk_raw_name)
                 VALUES (%s, %s)
                 """,
-                (job_id, skill_id),
+                (job_data["src_id"], skill["name"]),
                 conn=conn
             )
+            if skill["id"]:
+                execute_query(
+                    """
+                    INSERT INTO job_skill (job_id, sk_id)
+                    VALUES (%s, %s)
+                    """,
+                    (job_id, skill["id"]),
+                    conn=conn
+                )
 
-        for loc_id in job_data.get("job_locations") or []:
+        for loc in job_data.get("job_locations") or []:
             execute_query(
                 """
-                INSERT INTO job_location (job_id, loc_id)
+                INSERT INTO source_location_raw
+                (src_id, loc_raw_name)
                 VALUES (%s, %s)
                 """,
-                (job_id, loc_id),
+                (job_data["src_id"], loc["name"]),
                 conn=conn
             )
+            if loc["id"]:
+                execute_query(
+                    """
+                    INSERT INTO job_location (job_id, loc_id)
+                    VALUES (%s, %s)
+                    """,
+                    (job_id, loc["id"]),
+                    conn=conn
+                )
 
     return job_id
 
@@ -228,34 +252,34 @@ def main():
                 exp_range = parse_experience(requirement)
                 # education
                 req_edu = parse_education(requirement)
-                print("================== url =================")
-                print(url)
-                print("================== company =================")
-                print(company)
-                print("================== title =================")
-                print(title)
-                print("================== experience =================")
-                print(exp_range)
-                print("================== salary =================")
-                print(salary_min, salary_max)
-                print("================== description =================")
-                print(description)
-                print("================== requirement =================")
-                print(requirement)
-                print("================== benefits =================")
-                print(benefits)
-                print("================== posted at =================")
-                print(posted_at)
-                print("================== expired at =================")
-                print(expired_at)
-                print("================== position =================")
-                print(position)
-                print("================== work mode =================")
-                print(work_mode)
-                print("================== locations =================")
-                print(locations)
-                print("================== skills =================")
-                print(skills)
+                # print("================== url =================")
+                # print(url)
+                # print("================== company =================")
+                # print(company)
+                # print("================== title =================")
+                # print(title)
+                # print("================== experience =================")
+                # print(exp_range)
+                # print("================== salary =================")
+                # print(salary_min, salary_max)
+                # print("================== description =================")
+                # print(description)
+                # print("================== requirement =================")
+                # print(requirement)
+                # print("================== benefits =================")
+                # print(benefits)
+                # print("================== posted at =================")
+                # print(posted_at)
+                # print("================== expired at =================")
+                # print(expired_at)
+                # print("================== position =================")
+                # print(position)
+                # print("================== work mode =================")
+                # print(work_mode)
+                # print("================== locations =================")
+                # print(locations)
+                # print("================== skills =================")
+                # print(skills)
                 save_job_to_db({
                     "co_id": company["id"] if company else None,
                     "src_id": url["src_id"],
@@ -270,13 +294,12 @@ def main():
                     "job_benefit": benefits,
                     "job_expired_at": expired_at,
                     "job_posted_at": posted_at,
-                    "pos_id": position["id"] if position and pd.notna(position["id"]) else None,
-                    "wm_id": work_mode["id"] if work_mode and pd.notna(work_mode["id"]) else None,
+                    "job_pos": position if position else None,
+                    "job_wm": work_mode if work_mode else None,
                     "job_req": requirement,
-                    "job_skills": [sk["id"] for sk in skills if sk and pd.notna(sk["id"])],
-                    "job_locations": [loc["id"] for loc in locations if loc and pd.notna(loc["id"])],
+                    "job_skills": skills if skills else None,
+                    "job_locations": locations if locations else None,
                 })
-                break
             except Exception as e:
                 begin = True
                 print(f"[MAIN] Lỗi khi crawl URL {url}: {e}")
