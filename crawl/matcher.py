@@ -66,14 +66,12 @@ def exact_match(raw_name: str, lookup: dict):
     existing = lookup.get(normalized_name)
     if not existing:
         return None
-    if existing["id"] is not None:
-        return {
-            "id": existing["id"],
-            "name": normalized_name,
-            "status": existing["status"],
-            "method": "exact",
-        }
-    return None
+    return {
+        "id": existing["id"],
+        "name": normalized_name,
+        "status": existing["status"],
+        "method": "exact",
+    }
 
 def fuzzy_match(raw_name: str, lookup: dict):
     normalized_name = normalize_string(raw_name)
@@ -134,105 +132,98 @@ def fuzzy_match(raw_name: str, lookup: dict):
         "method": "fuzzy",
     }
 
-def match_raw_name(lookup: dict, raw_name: str, mode: MODE):
+def match_raw_name(lookup: dict, raw_name: list, mode: MODE):
+    """Match each distinct normalized raw value once, preserving input order."""
+    unique_values = []
+    seen = set()
+    for raw_value in raw_name or []:
+        normalized_name = normalize_string(raw_value)
+        if not normalized_name or normalized_name in seen:
+            continue
+        seen.add(normalized_name)
+        unique_values.append((raw_value, normalized_name))
+
+    results = []
     if mode == "com":
-        result = exact_match(raw_name, lookup)
+        for raw_value, normalized_name in unique_values:
+            result = exact_match(raw_value, lookup)
+            if result:
+                results.append(result)
+                continue
+
+            fuzzy_result = fuzzy_match(raw_value, lookup)
+            if fuzzy_result and fuzzy_result["status"] == "mapped":
+                results.append(fuzzy_result)
+                continue
+
+            row = execute_query(
+                """
+                    INSERT INTO company (co_name, co_name_norm)
+                    VALUES (%s, %s)
+                    RETURNING co_id
+                """,
+                (raw_value, normalized_name),
+                fetch="one",
+            )
+            results.append({
+                "id": row["co_id"],
+                "name": normalized_name,
+                "status": "new",
+                "method": None if fuzzy_result is None else fuzzy_result["method"],
+            })
+            lookup[normalized_name] = {"id": row["co_id"], "status": "new"}
+        return results
+
+    try:
+        table, name_col, id_col, status_col, count_col = {
+            "pos": ("position_raw", "pos_raw_name", "pos_id", "pos_raw_status", "pos_raw_count"),
+            "wm": ("work_mode_raw", "wm_raw_name", "wm_id", "wm_raw_status", "wm_raw_count"),
+            "loc": ("location_raw", "loc_raw_name", "loc_id", "loc_raw_status", "loc_raw_count"),
+            "sk": ("skill_raw", "sk_raw_name", "sk_id", "sk_raw_status", "sk_raw_count"),
+        }[mode]
+    except KeyError as exc:
+        raise ValueError(f"Invalid mode: {mode}") from exc
+
+    count_query = {
+        "pos": "UPDATE position_raw SET pos_raw_count = pos_raw_count + 1 WHERE pos_raw_name = %s",
+        "wm": "UPDATE work_mode_raw SET wm_raw_count = wm_raw_count + 1 WHERE wm_raw_name = %s",
+        "loc": "UPDATE location_raw SET loc_raw_count = loc_raw_count + 1 WHERE loc_raw_name = %s",
+        "sk": "UPDATE skill_raw SET sk_raw_count = sk_raw_count + 1 WHERE sk_raw_name = %s",
+    }[mode]
+
+    for raw_value, normalized_name in unique_values:
+        result = exact_match(raw_value, lookup)
         if result:
-            return result
+            execute_query(count_query, (result["name"],))
+            results.append(result)
+            continue
 
-        result = fuzzy_match(raw_name, lookup)
-
-        if result and result["status"] == "mapped":
-            return result
+        fuzzy_result = fuzzy_match(raw_value, lookup)
+        if fuzzy_result is None:
+            fuzzy_result = {
+                "id": None,
+                "name": normalized_name,
+                "status": "pending",
+                "method": None,
+            }
 
         row = execute_query(
-            """
-                INSERT INTO company (co_name, co_name_norm)
-                VALUES (%s, %s)
-                RETURNING co_id
+            f"""
+                INSERT INTO {table} ({name_col}, {id_col}, {status_col})
+                VALUES (%s, %s, %s)
+                ON CONFLICT ({name_col}) DO UPDATE
+                SET {count_col} = {table}.{count_col} + 1
+                RETURNING {name_col}, {id_col}, {status_col}
             """,
-            (raw_name, normalize_string(raw_name)),
-            fetch="one"
+            (fuzzy_result["name"], fuzzy_result["id"], fuzzy_result["status"]),
+            fetch="one",
         )
-
-        co_id = row["co_id"]
-
-        return {
-            "id": co_id,
-            "name": normalize_string(raw_name),
-            "status": "new",
-            "method": None if result is None else result["method"],
-        }
-
-    result = exact_match(raw_name, lookup)
-    if result:
-        match mode:
-            case "pos":
-                query = """
-                    UPDATE position_raw
-                    SET pos_raw_count = pos_raw_count + 1
-                    WHERE pos_raw_name = %s
-                """
-            case "wm":
-                query = """
-                    UPDATE work_mode_raw
-                    SET wm_raw_count = wm_raw_count + 1
-                    WHERE wm_raw_name = %s
-                """
-            case "loc":
-                query = """
-                    UPDATE location_raw
-                    SET loc_raw_count = loc_raw_count + 1
-                    WHERE loc_raw_name = %s
-                """
-            case "sk":
-                query = """
-                    UPDATE skill_raw
-                    SET sk_raw_count = sk_raw_count + 1
-                    WHERE sk_raw_name = %s
-                """
-        execute_query(query, (result["name"],))
-        return result
-
-    result = fuzzy_match(raw_name, lookup)
-
-    if result is None:
-        result = {
-            "id": None,
-            "name": normalize_string(raw_name),
-            "status": "pending",
-            "method": None,
-        }
-
-    match mode:
-        case "pos":
-            query = """
-                INSERT INTO position_raw
-                (pos_raw_name, pos_id, pos_raw_status)
-                VALUES (%s, %s, %s)
-            """
-        case "wm":
-            query = """
-                INSERT INTO work_mode_raw
-                (wm_raw_name, wm_id, wm_raw_status)
-                VALUES (%s, %s, %s)
-            """
-        case "loc":
-            query = """
-                INSERT INTO location_raw
-                (loc_raw_name, loc_id, loc_raw_status)
-                VALUES (%s, %s, %s)
-            """
-        case "sk":
-            query = """
-                INSERT INTO skill_raw
-                (sk_raw_name, sk_id, sk_raw_status)
-                VALUES (%s, %s, %s)
-            """
-
-    execute_query(
-        query,
-        (result["name"], result["id"], result["status"])
-    )
-
-    return result
+        cached_name = normalize_string(row[name_col])
+        lookup[cached_name] = {"id": row[id_col], "status": row[status_col]}
+        results.append({
+            "id": row[id_col],
+            "name": cached_name,
+            "status": row[status_col],
+            "method": fuzzy_result["method"],
+        })
+    return results
