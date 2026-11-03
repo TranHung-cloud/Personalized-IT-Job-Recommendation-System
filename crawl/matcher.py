@@ -132,7 +132,7 @@ def fuzzy_match(raw_name: str, lookup: dict):
         "method": "fuzzy",
     }
 
-def match_raw_name(lookup: dict, raw_name: list, mode: MODE):
+def match_raw_names(lookup: dict, raw_names: list, mode: MODE):
     """Match each distinct normalized raw value once, preserving input order."""
     unique_values = []
     seen = set()
