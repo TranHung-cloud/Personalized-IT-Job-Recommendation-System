@@ -3,6 +3,7 @@ import time
 import json
 import re
 import pandas as pd
+from datetime import date
 from bs4 import BeautifulSoup
 
 from crawl.browser_interact import (
@@ -23,7 +24,8 @@ from crawl.config import (
 from crawl.database import (
     execute_query,
     close_connection,
-    pool
+    pool,
+    save_raw_jd_to_bucket,
 )
 from crawl.jd_parser import (
     normalize_string,
@@ -55,7 +57,7 @@ def split_description(description):
 
     return result
 
-def save_job_to_db(job_data):
+def save_job_to_db(job_data, raw_jd_json):
     job_data["pos_id"] = job_data["job_pos"]["id"] if job_data.get("job_pos") and pd.notna(job_data["job_pos"]["id"]) else None
     job_data["wm_id"] = job_data["job_wm"]["id"] if job_data.get("job_wm") and pd.notna(job_data["job_wm"]["id"]) else None
     query = """
@@ -135,6 +137,9 @@ def save_job_to_db(job_data):
                     conn=conn
                 )
 
+    save_raw_jd_to_bucket(
+        job_data["src_id"], date.today().isoformat(), raw_jd_json
+    )
     return job_id
 
 def main():
@@ -280,6 +285,20 @@ def main():
                 # print(locations)
                 # print("================== skills =================")
                 # print(skills)
+                raw_jd_json = {
+                    "title": title,
+                    "description": overview,
+                    "datePosted": posted_at,
+                    "dateExpired": expired_at,
+                    "workMode": work_mode_raw,
+                    "company": company_raw,
+                    "locations": locations_raw,
+                    "salaryMin": sal_min_raw,
+                    "salaryMax": sal_max_raw,
+                }
+                if skills_raw:
+                    raw_jd_json["skills"] = skills_raw
+
                 save_job_to_db({
                     "co_id": company["id"] if company else None,
                     "src_id": url["src_id"],
@@ -299,7 +318,8 @@ def main():
                     "job_req": requirement,
                     "job_skills": skills if skills else None,
                     "job_locations": locations if locations else None,
-                })
+                }, raw_jd_json)
+                break
             except Exception as e:
                 begin = True
                 print(f"[MAIN] Lỗi khi crawl URL {url}: {e}")

@@ -8,6 +8,11 @@ ROOT_DIR = Path(__file__).resolve().parent
 load_dotenv(ROOT_DIR / ".env")
 
 DATABASE_URL = os.getenv("DATABASE_URL")
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_REGION = os.getenv("AWS_REGION")
+AWS_ENDPOINT_URL_S3 = os.getenv("AWS_ENDPOINT_URL_S3")
+STORAGE_BUCKET = os.getenv("STORAGE_BUCKET")
 
 PROXY_TIMEOUT = int(
     os.getenv("PROXY_TIMEOUT", "15")
