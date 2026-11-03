@@ -37,7 +37,7 @@ from crawl.jd_parser import (
 )
 from crawl.matcher import (
     build_raw_lookup,
-    match_raw_name,
+    match_raw_names,
 )
 
 
@@ -107,7 +107,7 @@ def save_job_to_db(job_data, raw_jd_json):
                 (job_data["src_id"], skill["name"]),
                 conn=conn
             )
-            if skill["id"]:
+            if skill.get("id") is not None and pd.notna(skill["id"]):
                 execute_query(
                     """
                     INSERT INTO job_skill (job_id, sk_id)
@@ -127,7 +127,7 @@ def save_job_to_db(job_data, raw_jd_json):
                 (job_data["src_id"], loc["name"]),
                 conn=conn
             )
-            if loc["id"]:
+            if loc.get("id") is not None and pd.notna(loc["id"]):
                 execute_query(
                     """
                     INSERT INTO job_location (job_id, loc_id)
@@ -180,6 +180,7 @@ def main():
                     wait_until="domcontentloaded",
                     timeout=60000
                 )
+                wait_and_scroll(page)
                 locator = page.locator('script[type="application/ld+json"]')
                 script_content = locator.all_text_contents()
                 for script in script_content:
@@ -197,24 +198,49 @@ def main():
                         expired_at = format_date(data.get("validThrough"))
                         # skill
                         skills_raw = data.get("skills").split(",") if data.get("skills") else None
-                        skills = []
-                        if skills_raw:
-                            skills = [match_raw_name(lookup_sk, sk, "sk") for sk in skills_raw]
+                        skills = match_raw_names(lookup_sk, skills_raw, "sk")
                         # work mode
                         work_mode_raw = data.get("employmentType")
-                        work_mode = match_raw_name(lookup_wm, work_mode_raw, "wm") if work_mode_raw else None
+                        work_mode_matches = match_raw_names(
+                            lookup_wm, [work_mode_raw] if work_mode_raw else [], "wm"
+                        )
+                        work_mode = work_mode_matches[0] if work_mode_matches else None
                         # location
                         locations_raw = data.get("jobLocation")
-                        locations = []
-                        for loc in locations_raw:
-                            loc_name = loc.get("address").get("addressRegion")
+                        seen_location_inputs = set()
+                        location_names = []
+                        for loc in locations_raw or []:
+                            address = loc.get("address") or {}
+                            loc_name = address.get("addressRegion")
                             if loc_name:
-                                loc_match = match_raw_name(lookup_loc, loc_name, "loc")
-                                if loc_match:
-                                    locations.append(loc_match)
+                                normalized_loc_name = normalize_string(loc_name)
+                                if normalized_loc_name in seen_location_inputs:
+                                    continue
+                                seen_location_inputs.add(normalized_loc_name)
+                                location_names.append(loc_name)
+                        location_matches = match_raw_names(
+                            lookup_loc, location_names, "loc"
+                        )
+                        locations = []
+                        seen_locations = set()
+                        for loc_match in location_matches:
+                            location_id = loc_match.get("id")
+                            location_key = (
+                                ("id", location_id)
+                                if location_id is not None and pd.notna(location_id)
+                                else ("name", loc_match["name"])
+                            )
+                            if location_key not in seen_locations:
+                                locations.append(loc_match)
+                                seen_locations.add(location_key)
                         # company
                         company_raw = data.get("hiringOrganization", {}).get("name")
-                        company = match_raw_name(lookup_com, normalize_company(company_raw), "com") if company_raw else None
+                        company_matches = match_raw_names(
+                            lookup_com,
+                            [normalize_company(company_raw)] if company_raw else [],
+                            "com",
+                        )
+                        company = company_matches[0] if company_matches else None
                         # salary
                         salary_currency = None
                         salary_min = None
@@ -251,40 +277,43 @@ def main():
                             links.first.get_attribute("title")
                             or links.first.inner_text().strip()
                         )
-                        position = match_raw_name(lookup_pos, pos_raw, "pos")
+                        position_matches = match_raw_names(
+                            lookup_pos, [pos_raw], "pos"
+                        )
+                        position = position_matches[0] if position_matches else None
 
                 # experience
                 exp_range = parse_experience(requirement)
                 # education
                 req_edu = parse_education(requirement)
-                # print("================== url =================")
-                # print(url)
-                # print("================== company =================")
-                # print(company)
-                # print("================== title =================")
-                # print(title)
-                # print("================== experience =================")
-                # print(exp_range)
-                # print("================== salary =================")
-                # print(salary_min, salary_max)
-                # print("================== description =================")
-                # print(description)
-                # print("================== requirement =================")
-                # print(requirement)
-                # print("================== benefits =================")
-                # print(benefits)
-                # print("================== posted at =================")
-                # print(posted_at)
-                # print("================== expired at =================")
-                # print(expired_at)
-                # print("================== position =================")
-                # print(position)
-                # print("================== work mode =================")
-                # print(work_mode)
-                # print("================== locations =================")
-                # print(locations)
-                # print("================== skills =================")
-                # print(skills)
+                print("================== url =================")
+                print(url)
+                print("================== company =================")
+                print(company)
+                print("================== title =================")
+                print(title)
+                print("================== experience =================")
+                print(exp_range)
+                print("================== salary =================")
+                print(salary_min, salary_max)
+                print("================== description =================")
+                print(description)
+                print("================== requirement =================")
+                print(requirement)
+                print("================== benefits =================")
+                print(benefits)
+                print("================== posted at =================")
+                print(posted_at)
+                print("================== expired at =================")
+                print(expired_at)
+                print("================== position =================")
+                print(position)
+                print("================== work mode =================")
+                print(work_mode)
+                print("================== locations =================")
+                print(locations)
+                print("================== skills =================")
+                print(skills)
                 raw_jd_json = {
                     "title": title,
                     "description": overview,
@@ -319,7 +348,6 @@ def main():
                     "job_skills": skills if skills else None,
                     "job_locations": locations if locations else None,
                 }, raw_jd_json)
-                break
             except Exception as e:
                 begin = True
                 print(f"[MAIN] Lỗi khi crawl URL {url}: {e}")
