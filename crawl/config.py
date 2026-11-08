@@ -86,6 +86,14 @@ VIETNAMWORKS_JOB_LIST_URL = os.getenv(
     "VIETNAMWORKS_JOB_LIST_URL", "https://ms.vietnamworks.com/job-search/v1.0/search"
 )
 
+MAX_RETRIES = int(
+    os.getenv("MAX_RETRIES", "3")
+)
+
+MAX_NEXT_REDIRECTS = int(
+    os.getenv("MAX_NEXT_REDIRECTS", "5")
+)
+
 class MODE(Enum):
     DIRECT = 1
     PROXY = 2
