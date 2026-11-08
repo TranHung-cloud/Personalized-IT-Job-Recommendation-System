@@ -22,6 +22,7 @@ from crawl.config import (
     ITVIEC_URL,
     PROXY_MODE,
     MODE,
+    MAX_JOBS_PER_RUN,
     MAX_RETRIES,
     MAX_NEXT_REDIRECTS
 )
