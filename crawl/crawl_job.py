@@ -851,7 +851,9 @@ def main():
         FROM source s
         JOIN site st ON s.site_id = st.site_id
         WHERE s.src_status = %s
-    """, (SOURCE_STATUS_PENDING,), fetch=True)
+        ORDER BY s.src_id ASC
+        LIMIT %s
+    """, (SOURCE_STATUS_PENDING, MAX_JOBS_PER_RUN), fetch=True)
     lookup_pos = build_raw_lookup("pos")
     lookup_wm = build_raw_lookup("wm")
     lookup_loc = build_raw_lookup("loc")

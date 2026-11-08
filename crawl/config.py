@@ -94,6 +94,10 @@ MAX_NEXT_REDIRECTS = int(
     os.getenv("MAX_NEXT_REDIRECTS", "5")
 )
 
+MAX_JOBS_PER_RUN = int(
+    os.getenv("MAX_JOBS_PER_RUN", "100")
+)
+
 class MODE(Enum):
     DIRECT = 1
     PROXY = 2
