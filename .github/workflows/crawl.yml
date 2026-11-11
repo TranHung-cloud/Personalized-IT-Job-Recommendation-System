@@ -42,6 +42,7 @@ jobs:
       - name: Run crawl script
         env:
           PYTHONPATH: ${{ github.workspace }}
+          PYTHONUNBUFFERED: "1"
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           STORAGE_BUCKET: ${{ secrets.STORAGE_BUCKET }}
           AWS_ENDPOINT_URL_S3: ${{ secrets.AWS_ENDPOINT_URL_S3 }}
@@ -49,4 +50,6 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
         run: |
-          python -m ${{ steps.task.outputs.script }}
+          set -o pipefail
+          mkdir -p log
+          python -u -m ${{ steps.task.outputs.script }} 2>&1 | tee log/app.log
