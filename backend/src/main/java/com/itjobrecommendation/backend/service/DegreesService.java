@@ -22,7 +22,7 @@ public class DegreesService {
     private final MediaService mediaService;
 
     @Transactional
-    public void createDegree(DegreeCreateDTO dto) {
+    public void create(DegreeCreateDTO dto) {
         if (dto.getPfId() == null)
             throw new IllegalArgumentException("Thông tin hồ sơ không được để trống");
         Profile profile = profileRepository.findById(dto.getPfId())
