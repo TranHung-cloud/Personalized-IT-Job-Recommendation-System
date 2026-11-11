@@ -161,6 +161,7 @@ CREATE TABLE source (
     src_crawled_at TIMESTAMPTZ,
     src_created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     src_raw_key TEXT,
+    src_status VARCHAR(255) CHECK (src_status IN ('pending', 'crawled', 'error', 'duplicate'))
     pos_raw_name VARCHAR(255)
         REFERENCES position_raw(pos_raw_name),
     wm_raw_name VARCHAR(255)
