@@ -27,13 +27,4 @@ public class Profile {
     private Account account;
     @Column(name = "pf_expt_sal_min")
     private Integer expectedSalaryMin;
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "pos_id")
-    private Position position;
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "wm_id")
-    private WorkMode workMode;
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "loc_id")
-    private Location location;
 }
