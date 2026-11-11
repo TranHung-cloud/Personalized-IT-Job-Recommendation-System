@@ -296,10 +296,6 @@ CREATE TABLE profile (
 
     pf_expt_sal_min INTEGER
         CHECK (pf_expt_sal_min >= 0),
-
-    pos_id UUID REFERENCES position(pos_id),
-    wm_id UUID REFERENCES work_mode(wm_id),
-    loc_id UUID REFERENCES location(loc_id)
 );
 
 
