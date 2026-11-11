@@ -18,7 +18,6 @@ public class WorkExperienceCreateDTO {
     private UUID coId;
     @NotNull(message = "Vị trí công việc không được để trống")
     private UUID posId;
-    @NotNull(message = "Hồ sơ cá nhân không được để trống")
     private UUID pfId;
     @NotNull(message = "Thời gian bắt đầu làm việc không được để trống")
     private LocalDate startAt;

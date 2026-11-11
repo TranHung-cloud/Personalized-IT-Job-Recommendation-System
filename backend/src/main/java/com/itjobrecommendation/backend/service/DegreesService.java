@@ -23,7 +23,8 @@ public class DegreesService {
 
     @Transactional
     public void createDegree(DegreeCreateDTO dto) {
-
+        if (dto.getPfId() == null)
+            throw new IllegalArgumentException("Thông tin hồ sơ không được để trống");
         Profile profile = profileRepository.findById(dto.getPfId())
                 .orElseThrow(() -> new RuntimeException("Thông tin hồ sơ không tồn tại"));
 

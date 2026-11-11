@@ -29,6 +29,5 @@ public class DegreeCreateDTO {
     private LocalDate degIssuedAt;
     @NotNull(message = "Học vị không được để trống")
     private UUID qualId;
-    @NotNull(message = "Thông tin hồ sơ không được để trống")
     private UUID pfId;
 }

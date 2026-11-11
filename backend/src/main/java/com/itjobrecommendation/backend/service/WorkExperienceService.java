@@ -19,32 +19,34 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class WorkExperienceService {
-    private final WorkExperienceRepository workExperienceRepository;
-    private final ProfileRepository profileRepository;
-    private final CompanyRepository companyRepository;
-    private final PositionRepository positionRepository;
+        private final WorkExperienceRepository workExperienceRepository;
+        private final ProfileRepository profileRepository;
+        private final CompanyRepository companyRepository;
+        private final PositionRepository positionRepository;
 
-    @Transactional
-    public void create(WorkExperienceCreateDTO dto) {
-        Profile profile = profileRepository.findById(dto.getPfId())
-                .orElseThrow(() -> new IllegalArgumentException("Hồ sơ cá nhân không tồn tại"));
+        @Transactional
+        public void create(WorkExperienceCreateDTO dto) {
+                if (dto.getPfId() == null)
+                        throw new IllegalArgumentException("Hồ sơ cá nhân không được để trống");
+                Profile profile = profileRepository.findById(dto.getPfId())
+                                .orElseThrow(() -> new IllegalArgumentException("Hồ sơ cá nhân không tồn tại"));
 
-        Company company = companyRepository.findById(dto.getCoId())
-                .orElseThrow(() -> new IllegalArgumentException("Công ty không tồn tại"));
+                Company company = companyRepository.findById(dto.getCoId())
+                                .orElseThrow(() -> new IllegalArgumentException("Công ty không tồn tại"));
 
-        Position position = positionRepository.findById(dto.getPosId())
-                .orElseThrow(() -> new IllegalArgumentException("Vị trí công việc không tồn tại"));
+                Position position = positionRepository.findById(dto.getPosId())
+                                .orElseThrow(() -> new IllegalArgumentException("Vị trí công việc không tồn tại"));
 
-        WorkExperience workExperience = new WorkExperience();
-        workExperience.setId(
-                new WorkExperienceId(
-                        profile.getId(),
-                        company.getId(),
-                        position.getId(),
-                        dto.getStartAt()));
-        if (dto.getEndAt() != null) {
-            workExperience.setMonthEnd(dto.getEndAt());
+                WorkExperience workExperience = new WorkExperience();
+                workExperience.setId(
+                                new WorkExperienceId(
+                                                profile.getId(),
+                                                company.getId(),
+                                                position.getId(),
+                                                dto.getStartAt()));
+                if (dto.getEndAt() != null) {
+                        workExperience.setMonthEnd(dto.getEndAt());
+                }
+                workExperienceRepository.save(workExperience);
         }
-        workExperienceRepository.save(workExperience);
-    }
 }
