@@ -27,7 +27,7 @@ jobs:
       - name: Determine crawl task
         id: task
         run: |
-          START_DATE="2026-11-08"
+          START_DATE="2026-11-11"
           TODAY=$(date -u +%Y-%m-%d)
 
           DAYS=$(( ($(date -d "$TODAY" +%s) - $(date -d "$START_DATE" +%s)) / 86400 ))
