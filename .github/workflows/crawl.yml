@@ -34,11 +34,11 @@ jobs:
           CYCLE=$((DAYS % 4))
 
           if [ "$CYCLE" -eq 0 ]; then
-            echo "script=crawl/crawl_url.py" >> $GITHUB_OUTPUT
+            echo "script=crawl.crawl_url" >> $GITHUB_OUTPUT
           else
-            echo "script=crawl/crawl_job.py" >> $GITHUB_OUTPUT
+            echo "script=crawl.crawl_job" >> $GITHUB_OUTPUT
           fi
 
       - name: Run crawl script
         run: |
-          python ${{ steps.task.outputs.script }}
+          python -m ${{ steps.task.outputs.script }}
