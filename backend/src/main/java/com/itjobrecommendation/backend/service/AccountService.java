@@ -2,12 +2,22 @@ package com.itjobrecommendation.backend.service;
 
 import com.itjobrecommendation.backend.repository.AccountRepository;
 import com.itjobrecommendation.backend.repository.RoleRepository;
+import com.itjobrecommendation.backend.repository.UserInteractionRepository;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
-import org.springframework.boot.data.autoconfigure.web.DataWebProperties.Pageable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,13 +28,18 @@ import org.springframework.web.server.ResponseStatusException;
 import com.itjobrecommendation.backend.dto.AccountCreateDTO;
 import com.itjobrecommendation.backend.dto.AccountLoginDTO;
 import com.itjobrecommendation.backend.dto.AccountLoginResponseDTO;
+import com.itjobrecommendation.backend.dto.AccountViewDTO;
 import com.itjobrecommendation.backend.entity.Account;
 import com.itjobrecommendation.backend.entity.Role;
 import com.itjobrecommendation.backend.entity.enums.RoleEnum;
+import com.itjobrecommendation.backend.entity.enums.UserInteractionAction;
 import com.itjobrecommendation.backend.notification.service.EmailService;
 import com.itjobrecommendation.backend.notification.service.EmailVerificationJwtService;
 import com.itjobrecommendation.backend.security.JwtService;
 
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -36,6 +51,7 @@ public class AccountService {
     private final EmailVerificationJwtService verificationJwtService;
     private final EmailService emailService;
     private final JwtService jwtService;
+    private final UserInteractionRepository userInteractionRepository;
 
     @Transactional
     public void create(AccountCreateDTO dto) {
@@ -102,5 +118,53 @@ public class AccountService {
                 .email(account.getEmail())
                 .role(account.getRole() != null ? account.getRole().getName() : null)
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasRole('ADMIN')")
+    public Page<AccountViewDTO> getAccounts(String role, Pageable pageable) {
+        Specification<Account> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.isNull(root.get("deletedAt")));
+
+            if (role != null && !role.isBlank()) {
+                Join<Account, Role> roleJoin = root.join("role", JoinType.LEFT);
+                predicates.add(cb.equal(cb.upper(roleJoin.get("name")), role.trim().toUpperCase()));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        Page<Account> accountsPage = accountRepository.findAll(spec, pageable);
+        List<Account> accounts = accountsPage.getContent();
+        Map<UUID, Map<UserInteractionAction, Integer>> interactionCountMap = new HashMap<>();
+
+        if (!accounts.isEmpty()) {
+            List<UUID> accountIds = accounts.stream().map(Account::getId).toList();
+            List<Object[]> interactionCounts = userInteractionRepository.countByAccountIdsGroupedByAction(accountIds);
+            for (Object[] row : interactionCounts) {
+                UUID accId = (UUID) row[0];
+                UserInteractionAction action = (UserInteractionAction) row[1];
+                Long count = (Long) row[2];
+                interactionCountMap
+                        .computeIfAbsent(accId, k -> new EnumMap<>(UserInteractionAction.class))
+                        .put(action, count != null ? count.intValue() : 0);
+            }
+        }
+
+        return accountsPage.map(account -> {
+            Map<UserInteractionAction, Integer> counts = interactionCountMap.getOrDefault(account.getId(),
+                    Collections.emptyMap());
+            int interestedCount = counts.getOrDefault(UserInteractionAction.INTEREST, 0);
+            int ignoredCount = counts.getOrDefault(UserInteractionAction.IGNORE, 0);
+
+            return AccountViewDTO.builder()
+                    .email(account.getEmail())
+                    .role(account.getRole() != null ? account.getRole().getName() : null)
+                    .createdAt(account.getCreatedAt() != null ? account.getCreatedAt().toLocalDateTime() : null)
+                    .interestedJobCount(interestedCount)
+                    .ignoredJobCount(ignoredCount)
+                    .build();
+        });
     }
 }

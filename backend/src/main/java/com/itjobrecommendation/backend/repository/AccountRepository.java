@@ -2,6 +2,10 @@ package com.itjobrecommendation.backend.repository;
 
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
@@ -21,4 +25,8 @@ public interface AccountRepository extends JpaRepository<Account, UUID>, JpaSpec
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select account from Account account where account.id = :id")
     java.util.Optional<Account> findByIdForUpdate(@Param("id") UUID id);
+
+    @Override
+    @EntityGraph(attributePaths = {"role"})
+    Page<Account> findAll(Specification<Account> spec, Pageable pageable);
 }
