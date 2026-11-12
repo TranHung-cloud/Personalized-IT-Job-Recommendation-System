@@ -77,3 +77,20 @@ desktop.ini
 *.tmp
 *.swp
 *.bak
+
+# ==============================
+# AI Agent
+# ==============================
+.ai-agent/
+.agents/
+.codex/
+AGENTS.md
+AI_SLASH_COMMANDS.md
+
+# ==============================
+# Graphify
+# ==============================
+graphify-out/
+graph.html
+
+launch.http
