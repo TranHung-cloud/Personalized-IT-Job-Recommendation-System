@@ -15,4 +15,14 @@ import lombok.Setter;
 public class TargetsLocation {
     @EmbeddedId
     private TargetsLocationId id;
+
+    @MapsId("profileId")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pf_id", nullable = false)
+    private Profile profile;
+
+    @MapsId("locationId")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "loc_id", nullable = false)
+    private Location location;
 }

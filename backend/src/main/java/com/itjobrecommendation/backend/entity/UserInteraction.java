@@ -20,6 +20,17 @@ import com.itjobrecommendation.backend.entity.id.UserInteractionId;
 public class UserInteraction {
     @EmbeddedId
     private UserInteractionId id;
+
+    @MapsId("accountId")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "acc_id", nullable = false)
+    private Account account;
+
+    @MapsId("jobId")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "job_id", nullable = false)
+    private Job job;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "action")
     private UserInteractionAction action;

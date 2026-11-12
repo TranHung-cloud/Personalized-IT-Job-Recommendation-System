@@ -1,9 +1,6 @@
 package com.itjobrecommendation.backend.entity;
 
 import jakarta.persistence.*;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.ManyToOne;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -40,8 +37,10 @@ public class Source {
     @Enumerated(EnumType.STRING)
     @Column(name = "src_status")
     private SourceStatus status;
-    @Column(name = "pos_raw_name")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pos_raw_name")
     private String positionRawName;
-    @Column(name = "wm_raw_name")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "wm_raw_name")
     private String workModeRawName;
 }

@@ -3,6 +3,7 @@ package com.itjobrecommendation.backend.entity.id;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import lombok.AllArgsConstructor;
@@ -25,5 +26,5 @@ public class WorkExperienceId implements Serializable {
     @Column(name = "pos_id")
     private UUID positionId;
     @Column(name = "month_start")
-    private java.time.LocalDate monthStart;
+    private LocalDate monthStart;
 }

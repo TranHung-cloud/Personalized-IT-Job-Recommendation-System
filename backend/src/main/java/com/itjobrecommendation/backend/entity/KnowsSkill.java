@@ -15,4 +15,14 @@ import lombok.Setter;
 public class KnowsSkill {
     @EmbeddedId
     private KnowsSkillId id;
+
+    @MapsId("profileId")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pf_id", nullable = false)
+    private Profile profile;
+
+    @MapsId("skillId")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sk_id", nullable = false)
+    private Skill skill;
 }

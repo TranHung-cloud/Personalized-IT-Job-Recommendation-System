@@ -15,4 +15,14 @@ import lombok.Setter;
 public class SourceLocationRaw {
     @EmbeddedId
     private SourceLocationRawId id;
+
+    @MapsId("sourceId")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "source_id", nullable = false)
+    private Source source;
+
+    @MapsId("rawLocationName")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "loc_raw_name", nullable = false)
+    private Location location;
 }
