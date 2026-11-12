@@ -1,8 +1,14 @@
 package com.itjobrecommendation.backend.service;
 
+import java.lang.foreign.Linker.Option;
+import java.util.List;
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
 
 import com.itjobrecommendation.backend.dto.DegreeCreateDTO;
+import com.itjobrecommendation.backend.dto.DegreeViewDTO;
+import com.itjobrecommendation.backend.dto.OptionViewDTO;
 import com.itjobrecommendation.backend.entity.Degree;
 import com.itjobrecommendation.backend.entity.Profile;
 import com.itjobrecommendation.backend.entity.Qualifications;
@@ -44,5 +50,25 @@ public class DegreesService {
         degree.setQualification(qualification);
 
         degreeRepository.save(degree);
+    }
+
+    public List<DegreeViewDTO> getViewByProfile(Profile profile) {
+        List<Degree> degrees = degreeRepository.findByProfile(profile);
+        return degrees.stream()
+                .map(degree -> {
+                    OptionViewDTO qual = new OptionViewDTO(
+                        degree.getQualification().getId(),
+                        degree.getQualification().getName()
+                    );
+                    return new DegreeViewDTO(
+                        degree.getMajor(), 
+                        degree.getInstitution(),
+                        degree.getSignedBy(), 
+                        degree.getImagePath(), 
+                        degree.getIssuedAt(), 
+                        qual
+                    );
+                })
+                .toList();
     }
 }
