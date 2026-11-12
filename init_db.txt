@@ -28,8 +28,9 @@ CREATE TABLE role (
 CREATE TABLE account (
     acc_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     role_id UUID REFERENCES role(role_id),
-    acc_email VARCHAR(320) NOT NULL UNIQUE,
+    acc_email VARCHAR(320) NOT NULL,
     acc_password_hash TEXT NOT NULL,
+    acc_enabled BOOLEAN NOT NULL DEFAULT FALSE,
     acc_created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     acc_deleted_at TIMESTAMPTZ,
 

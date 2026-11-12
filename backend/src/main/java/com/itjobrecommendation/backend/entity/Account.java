@@ -29,6 +29,8 @@ public class Account {
     private String email;
     @Column(name = "acc_password_hash")
     private String passwordHash;
+    @Column(name = "acc_enabled")
+    private Boolean enabled;
     @Column(name = "acc_created_at")
     private OffsetDateTime createdAt;
     @Column(name = "acc_deleted_at")
