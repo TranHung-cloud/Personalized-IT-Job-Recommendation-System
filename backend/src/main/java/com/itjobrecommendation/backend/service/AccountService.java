@@ -6,6 +6,7 @@ import com.itjobrecommendation.backend.repository.RoleRepository;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import org.springframework.boot.data.autoconfigure.web.DataWebProperties.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -15,11 +16,14 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.web.server.ResponseStatusException;
 
 import com.itjobrecommendation.backend.dto.AccountCreateDTO;
+import com.itjobrecommendation.backend.dto.AccountLoginDTO;
+import com.itjobrecommendation.backend.dto.AccountLoginResponseDTO;
 import com.itjobrecommendation.backend.entity.Account;
 import com.itjobrecommendation.backend.entity.Role;
 import com.itjobrecommendation.backend.entity.enums.RoleEnum;
 import com.itjobrecommendation.backend.notification.service.EmailService;
 import com.itjobrecommendation.backend.notification.service.EmailVerificationJwtService;
+import com.itjobrecommendation.backend.security.JwtService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -31,6 +35,7 @@ public class AccountService {
     private final RoleRepository roleRepository;
     private final EmailVerificationJwtService verificationJwtService;
     private final EmailService emailService;
+    private final JwtService jwtService;
 
     @Transactional
     public void create(AccountCreateDTO dto) {
@@ -72,5 +77,30 @@ public class AccountService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email đã được xác minh");
         }
         account.setEnabled(true);
+    }
+
+    @Transactional(readOnly = true)
+    public AccountLoginResponseDTO login(AccountLoginDTO dto) {
+        Account account = accountRepository.findByEmailIgnoreCaseAndDeletedAtIsNull(dto.getEmail())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                        "Email hoặc mật khẩu không chính xác"));
+
+        if (!Boolean.TRUE.equals(account.getEnabled())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tài khoản chưa được kích hoạt qua email");
+        }
+
+        if (!passwordEncoder.matches(dto.getPassword(), account.getPasswordHash())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Email hoặc mật khẩu không chính xác");
+        }
+
+        String token = jwtService.generateToken(account);
+        return AccountLoginResponseDTO.builder()
+                .accessToken(token)
+                .tokenType("Bearer")
+                .expiresIn(jwtService.getExpirationSeconds())
+                .id(account.getId())
+                .email(account.getEmail())
+                .role(account.getRole() != null ? account.getRole().getName() : null)
+                .build();
     }
 }

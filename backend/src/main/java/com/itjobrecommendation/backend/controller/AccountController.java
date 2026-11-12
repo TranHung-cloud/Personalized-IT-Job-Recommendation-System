@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.itjobrecommendation.backend.dto.AccountCreateDTO;
+import com.itjobrecommendation.backend.dto.AccountLoginDTO;
+import com.itjobrecommendation.backend.dto.AccountLoginResponseDTO;
 import com.itjobrecommendation.backend.dto.EmailVerificationRequest;
 import com.itjobrecommendation.backend.service.AccountService;
 
@@ -30,5 +32,10 @@ public class AccountController {
     public ResponseEntity<Void> verifyEmail(@Valid @RequestBody EmailVerificationRequest request) {
         accountService.verifyEmail(request.token());
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<AccountLoginResponseDTO> login(@Valid @RequestBody AccountLoginDTO request) {
+        return ResponseEntity.ok(accountService.login(request));
     }
 }
