@@ -39,9 +39,11 @@ public class ProfileService {
     private final TargetsPositionRepository targetsPositionRepository;
     private final TargetsLocationRepository targetsLocationRepository;
     private final PrefersWorkModeRepository prefersWorkModeRepository;
+    private final AccountService accountService;
 
     private void assignSkills(Profile profile, List<UUID> skillIds) {
-        if (skillIds == null || skillIds.isEmpty()) return;
+        if (skillIds == null || skillIds.isEmpty())
+            return;
 
         List<KnowsSkill> knowsSkills = skillIds.stream()
                 .distinct()
@@ -56,7 +58,8 @@ public class ProfileService {
     }
 
     private void assignPositions(Profile profile, List<UUID> posIds) {
-        if (posIds == null || posIds.isEmpty()) return;
+        if (posIds == null || posIds.isEmpty())
+            return;
 
         List<TargetsPosition> targetsPositions = posIds.stream()
                 .distinct()
@@ -71,7 +74,8 @@ public class ProfileService {
     }
 
     private void assignLocations(Profile profile, List<UUID> locIds) {
-        if (locIds == null || locIds.isEmpty()) return;
+        if (locIds == null || locIds.isEmpty())
+            return;
 
         List<TargetsLocation> targetsLocations = locIds.stream()
                 .distinct()
@@ -86,7 +90,8 @@ public class ProfileService {
     }
 
     private void assignWorkModes(Profile profile, List<UUID> wmIds) {
-        if (wmIds == null || wmIds.isEmpty()) return;
+        if (wmIds == null || wmIds.isEmpty())
+            return;
 
         List<PrefersWorkMode> prefersWorkModes = wmIds.stream()
                 .distinct()
@@ -98,6 +103,22 @@ public class ProfileService {
                 .toList();
 
         prefersWorkModeRepository.saveAll(prefersWorkModes);
+    }
+
+    private void deleteExistingSkills(Profile profile) {
+        knowsSkillRepository.deleteByProfile(profile);
+    }
+
+    private void deleteExistingPositions(Profile profile) {
+        targetsPositionRepository.deleteByProfile(profile);
+    }
+
+    private void deleteExistingLocations(Profile profile) {
+        targetsLocationRepository.deleteByProfile(profile);
+    }
+
+    private void deleteExistingWorkModes(Profile profile) {
+        prefersWorkModeRepository.deleteByProfile(profile);
     }
 
     @Transactional
@@ -137,6 +158,31 @@ public class ProfileService {
                 degreeDTO.setPfId(profile.getId());
                 degreesService.create(degreeDTO);
             }
+        }
+    }
+
+    @Transactional
+    public void update(ProfileCreateDTO dto) {
+        Account account = accountService.getCurrentAccount();
+        Profile profile = profileRepository.findByAccount(account)
+                .orElseThrow(() -> new IllegalArgumentException("Hồ sơ không tồn tại"));
+        profile.setExpectedSalaryMin(dto.getExptSalMin());
+        profileRepository.save(profile);
+        deleteExistingSkills(profile);
+        deleteExistingPositions(profile);
+        deleteExistingLocations(profile);
+        deleteExistingWorkModes(profile);
+        if (dto.getSkillIds() != null && !dto.getSkillIds().isEmpty()) {
+            assignSkills(profile, dto.getSkillIds());
+        }
+        if (dto.getPosIds() != null && !dto.getPosIds().isEmpty()) {
+            assignPositions(profile, dto.getPosIds());
+        }
+        if (dto.getLocIds() != null && !dto.getLocIds().isEmpty()) {
+            assignLocations(profile, dto.getLocIds());
+        }
+        if (dto.getWmIds() != null && !dto.getWmIds().isEmpty()) {
+            assignWorkModes(profile, dto.getWmIds());
         }
     }
 }

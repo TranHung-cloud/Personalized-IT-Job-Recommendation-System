@@ -17,7 +17,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +38,7 @@ import com.itjobrecommendation.backend.entity.enums.RoleEnum;
 import com.itjobrecommendation.backend.entity.enums.UserInteractionAction;
 import com.itjobrecommendation.backend.notification.service.EmailService;
 import com.itjobrecommendation.backend.notification.service.EmailVerificationJwtService;
+import com.itjobrecommendation.backend.security.CustomUserDetails;
 import com.itjobrecommendation.backend.security.JwtService;
 
 import jakarta.persistence.criteria.Join;
@@ -166,5 +170,20 @@ public class AccountService {
                     .ignoredJobCount(ignoredCount)
                     .build();
         });
+    }
+
+    public Account getCurrentAccount() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AccessDeniedException("Người dùng chưa được xác thực");
+        }
+
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof CustomUserDetails userDetails) {
+            return accountRepository.findById(userDetails.getId())
+                    .orElseThrow(() -> new AccessDeniedException("Không tìm thấy tài khoản hiện tại"));
+        }
+
+        throw new AccessDeniedException("Không xác định được danh tính người dùng hiện tại");
     }
 }
