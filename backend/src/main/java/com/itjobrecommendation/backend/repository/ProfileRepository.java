@@ -8,7 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface ProfileRepository extends JpaRepository<Profile, UUID> {
-    Boolean existsByAccount_Id(UUID accountId);
+    Boolean existsByAccount(Account account);
 
     Optional<Profile> findByAccount(Account account);
 }

@@ -6,7 +6,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 import com.itjobrecommendation.backend.dto.DegreeCreateDTO;
-import com.itjobrecommendation.backend.dto.ProfileCreateDTO;
+import com.itjobrecommendation.backend.dto.ProfileRequestDTO;
 import com.itjobrecommendation.backend.dto.WorkExperienceCreateDTO;
 import com.itjobrecommendation.backend.entity.Account;
 import com.itjobrecommendation.backend.entity.KnowsSkill;
@@ -122,13 +122,9 @@ public class ProfileService {
     }
 
     @Transactional
-    public void create(ProfileCreateDTO dto) {
-        if (dto.getAccId() == null) {
-            throw new IllegalArgumentException("Tài khoản không được để trống");
-        }
-        Account account = accountRepository.findById(dto.getAccId())
-                .orElseThrow(() -> new IllegalArgumentException("Tài khoản không tồn tại"));
-        if (profileRepository.existsByAccount_Id(dto.getAccId())) {
+    public void create(ProfileRequestDTO dto) {
+        Account account = accountService.getCurrentAccount();
+        if (profileRepository.existsByAccount(account)) {
             throw new IllegalArgumentException("Hồ sơ đã tồn tại");
         }
         Profile profile = new Profile();
@@ -162,7 +158,7 @@ public class ProfileService {
     }
 
     @Transactional
-    public void update(ProfileCreateDTO dto) {
+    public void update(ProfileRequestDTO dto) {
         Account account = accountService.getCurrentAccount();
         Profile profile = profileRepository.findByAccount(account)
                 .orElseThrow(() -> new IllegalArgumentException("Hồ sơ không tồn tại"));

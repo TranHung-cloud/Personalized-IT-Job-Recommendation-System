@@ -4,7 +4,7 @@ import com.itjobrecommendation.backend.service.ProfileService;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.itjobrecommendation.backend.dto.ProfileCreateDTO;
+import com.itjobrecommendation.backend.dto.ProfileRequestDTO;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,7 +22,7 @@ public class ProfileController {
 
     @PostMapping()
     public ResponseEntity<Void> create(
-            @RequestBody ProfileCreateDTO dto) {
+            @RequestBody ProfileRequestDTO dto) {
         profileService.create(dto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
