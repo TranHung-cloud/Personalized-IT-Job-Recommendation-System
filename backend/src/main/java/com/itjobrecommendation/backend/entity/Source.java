@@ -39,8 +39,8 @@ public class Source {
     private SourceStatus status;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pos_raw_name")
-    private String positionRawName;
+    private PositionRaw positionRaw;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wm_raw_name")
-    private String workModeRawName;
+    private WorkModeRaw workModeRaw;
 }
