@@ -7,6 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.itjobrecommendation.backend.entity.Company;
 
 public interface CompanyRepository extends JpaRepository<Company, UUID> {
-    // Add any custom query methods if needed
-
+    java.util.List<Company> findTop20ByNameContainingIgnoreCaseOrderByNameAsc(String name);
+    java.util.Optional<Company> findFirstByNormalizedName(String normalizedName);
 }
