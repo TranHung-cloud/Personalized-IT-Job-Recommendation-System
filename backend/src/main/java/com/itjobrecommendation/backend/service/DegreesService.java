@@ -1,8 +1,6 @@
 package com.itjobrecommendation.backend.service;
 
-import java.lang.foreign.Linker.Option;
 import java.util.List;
-import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
@@ -57,17 +55,15 @@ public class DegreesService {
         return degrees.stream()
                 .map(degree -> {
                     OptionViewDTO qual = new OptionViewDTO(
-                        degree.getQualification().getId(),
-                        degree.getQualification().getName()
-                    );
+                            degree.getQualification().getId(),
+                            degree.getQualification().getName());
                     return new DegreeViewDTO(
-                        degree.getMajor(), 
-                        degree.getInstitution(),
-                        degree.getSignedBy(), 
-                        degree.getImagePath(), 
-                        degree.getIssuedAt(), 
-                        qual
-                    );
+                            degree.getMajor(),
+                            degree.getInstitution(),
+                            degree.getSignedBy(),
+                            degree.getImagePath(),
+                            degree.getIssuedAt(),
+                            qual);
                 })
                 .toList();
     }
