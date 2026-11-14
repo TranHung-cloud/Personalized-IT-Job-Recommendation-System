@@ -35,8 +35,18 @@ public class WorkExperienceService {
 		Profile profile = profileRepository.findById(dto.getPfId())
 				.orElseThrow(() -> new IllegalArgumentException("Hồ sơ cá nhân không tồn tại"));
 
-		Company company = companyRepository.findById(dto.getCoId())
-				.orElseThrow(() -> new IllegalArgumentException("Công ty không tồn tại"));
+		String companyName = dto.getCompanyName().trim();
+		String normalizedCompanyName = CompanyNameNormalizer.normalize(companyName);
+		if (normalizedCompanyName.isBlank()) {
+			throw new IllegalArgumentException("Tên công ty không hợp lệ");
+		}
+		Company company = companyRepository.findFirstByNormalizedName(normalizedCompanyName)
+				.orElseGet(() -> {
+					Company newCompany = new Company();
+					newCompany.setName(companyName);
+					newCompany.setNormalizedName(normalizedCompanyName);
+					return companyRepository.save(newCompany);
+				});
 
 		Position position = positionRepository.findById(dto.getPosId())
 				.orElseThrow(() -> new IllegalArgumentException("Vị trí công việc không tồn tại"));
