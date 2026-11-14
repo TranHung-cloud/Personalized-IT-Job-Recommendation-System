@@ -18,7 +18,10 @@ import com.itjobrecommendation.backend.dto.AccountLoginDTO;
 import com.itjobrecommendation.backend.dto.AccountLoginResponseDTO;
 import com.itjobrecommendation.backend.dto.AccountViewDTO;
 import com.itjobrecommendation.backend.dto.EmailVerificationRequest;
+import com.itjobrecommendation.backend.dto.PasswordResetConfirmRequest;
+import com.itjobrecommendation.backend.dto.PasswordResetRequest;
 import com.itjobrecommendation.backend.service.AccountService;
+import com.itjobrecommendation.backend.service.PasswordResetService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +31,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AccountController {
     private final AccountService accountService;
+    private final PasswordResetService passwordResetService;
 
     @GetMapping
     public ResponseEntity<Page<AccountViewDTO>> getAccounts(
@@ -51,5 +55,17 @@ public class AccountController {
     @PostMapping("/login")
     public ResponseEntity<AccountLoginResponseDTO> login(@Valid @RequestBody AccountLoginDTO request) {
         return ResponseEntity.ok(accountService.login(request));
+    }
+
+    @PostMapping("/password-reset/request")
+    public ResponseEntity<Void> requestPasswordReset(@Valid @RequestBody PasswordResetRequest request) {
+        passwordResetService.requestReset(request.email());
+        return ResponseEntity.status(HttpStatus.ACCEPTED).build();
+    }
+
+    @PostMapping("/password-reset/confirm")
+    public ResponseEntity<Void> confirmPasswordReset(@Valid @RequestBody PasswordResetConfirmRequest request) {
+        passwordResetService.confirmReset(request.token(), request.newPassword());
+        return ResponseEntity.noContent().build();
     }
 }

@@ -9,6 +9,15 @@ export type VerifyEmailRequest = {
   token: string;
 };
 
+export type PasswordResetRequest = {
+  email: string;
+};
+
+export type PasswordResetConfirmRequest = {
+  token: string;
+  newPassword: string;
+};
+
 export type LoginResponse = {
   accessToken: string;
   tokenType: string;

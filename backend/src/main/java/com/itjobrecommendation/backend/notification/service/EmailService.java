@@ -8,6 +8,8 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 import com.itjobrecommendation.backend.notification.dto.EmailMessageDTO;
 import com.itjobrecommendation.backend.notification.template.EmailTemplate;
@@ -34,6 +36,13 @@ public class EmailService {
         String verificationUrl = frontendUrl.replaceAll("/$", "")
                 + "/verify-email?token=" + token;
         sendNow(emailTemplate.verification(recipient, verificationUrl));
+    }
+
+    @Async("emailExecutor")
+    public void sendPasswordResetEmail(String recipient, String token) {
+        String resetUrl = frontendUrl.replaceAll("/$", "")
+                + "/reset-password?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
+        sendNow(emailTemplate.passwordReset(recipient, resetUrl));
     }
 
     @Async("emailExecutor")

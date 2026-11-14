@@ -5,6 +5,8 @@ import type {
   ApiErrorResponse,
   LoginRequest,
   LoginResponse,
+  PasswordResetConfirmRequest,
+  PasswordResetRequest,
   RegisterRequest,
   VerifyEmailRequest,
 } from "@/type/auth";
@@ -65,6 +67,8 @@ export function useAuth() {
     async (data: LoginRequest) => {
       const result = await run(() => request<LoginResponse>("login", data));
       window.localStorage.setItem("accessToken", result.accessToken);
+      window.localStorage.setItem("accountRole", result.role ?? "");
+      window.localStorage.setItem("accountEmail", result.email);
       return result;
     },
     [run],
@@ -75,5 +79,24 @@ export function useAuth() {
     [run],
   );
 
-  return { register, login, verifyEmail, isLoading, error, clearError: () => setError(null) };
+  const requestPasswordReset = useCallback(
+    (data: PasswordResetRequest) => run(() => request<void>("password-reset/request", data)),
+    [run],
+  );
+
+  const confirmPasswordReset = useCallback(
+    (data: PasswordResetConfirmRequest) => run(() => request<void>("password-reset/confirm", data)),
+    [run],
+  );
+
+  return {
+    register,
+    login,
+    verifyEmail,
+    requestPasswordReset,
+    confirmPasswordReset,
+    isLoading,
+    error,
+    clearError: () => setError(null),
+  };
 }
