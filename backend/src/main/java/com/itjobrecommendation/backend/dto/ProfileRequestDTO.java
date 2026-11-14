@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import jakarta.validation.constraints.Min;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
@@ -20,6 +21,6 @@ public class ProfileRequestDTO {
     private List<UUID> locIds;
     private List<UUID> wmIds;
     private List<UUID> posIds;
-    private List<WorkExperienceCreateDTO> workExperiences;
+    private List<@Valid WorkExperienceCreateDTO> workExperiences;
     private List<DegreeCreateDTO> degrees;
 }

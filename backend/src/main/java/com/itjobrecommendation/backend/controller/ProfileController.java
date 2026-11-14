@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/profiles")
@@ -24,7 +25,7 @@ public class ProfileController {
 
     @PostMapping()
     public ResponseEntity<Void> create(
-            @RequestBody ProfileRequestDTO dto) {
+            @Valid @RequestBody ProfileRequestDTO dto) {
         profileService.create(dto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
