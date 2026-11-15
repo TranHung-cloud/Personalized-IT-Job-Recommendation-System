@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { ProfileOnboardingModal } from "@/components/profile/ProfileOnboardingModal";
+import { useProfile } from "@/hook/useProfile";
 import {
   ArrowLeftRight,
   Bookmark,
@@ -52,6 +54,9 @@ export function DashboardShell({
   const [menuOpen, setMenuOpen] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
   const [email, setEmail] = useState("");
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [profileCheckError, setProfileCheckError] = useState<string | null>(null);
+  const { hasProfile } = useProfile();
   const items = navigation[variant];
   const activeItem = items.find((item) => item.href === pathname) ?? items[0];
 
@@ -73,10 +78,45 @@ export function DashboardShell({
     return () => window.clearTimeout(timeoutId);
   }, [router, variant]);
 
+  useEffect(() => {
+    if (!sessionReady || variant !== "user" || window.sessionStorage.getItem("profileOnboardingSkipped") === "1") {
+      return;
+    }
+
+    const token = window.localStorage.getItem("accessToken");
+    if (!token) return;
+
+    let cancelled = false;
+    hasProfile(token)
+      .then((exists) => {
+        if (!cancelled) {
+          setProfileCheckError(null);
+          if (exists) window.sessionStorage.removeItem("profileOnboardingSkipped");
+          setShowOnboarding(!exists);
+        }
+      })
+      .catch((cause: unknown) => {
+        if (cancelled) return;
+        if (cause instanceof Error && cause.message === "SESSION_EXPIRED") {
+          window.localStorage.removeItem("accessToken");
+          window.localStorage.removeItem("accountRole");
+          window.localStorage.removeItem("accountEmail");
+          router.replace("/login");
+          return;
+        }
+        setProfileCheckError(cause instanceof Error ? cause.message : "Không thể kiểm tra hồ sơ.");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hasProfile, router, sessionReady, variant]);
+
   function logout() {
     window.localStorage.removeItem("accessToken");
     window.localStorage.removeItem("accountRole");
     window.localStorage.removeItem("accountEmail");
+    window.sessionStorage.removeItem("profileOnboardingSkipped");
     router.replace("/login");
   }
 
@@ -146,9 +186,27 @@ export function DashboardShell({
           <div className="hidden max-w-[40%] truncate text-sm text-[#64748B] sm:block">{email}</div>
         </header>
         <main id="main-content" className="min-h-[calc(100vh-4rem)] p-4 sm:p-6 lg:p-8">
+          {variant === "user" && profileCheckError && (
+            <div role="alert" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <span>{profileCheckError}</span>
+              <button type="button" onClick={() => window.location.reload()} className="min-h-10 rounded-lg px-3 font-semibold underline underline-offset-2">Thử lại</button>
+            </div>
+          )}
           {children}
         </main>
       </div>
+      {variant === "user" && showOnboarding && (
+        <ProfileOnboardingModal
+          onSkip={() => {
+            window.sessionStorage.setItem("profileOnboardingSkipped", "1");
+            setShowOnboarding(false);
+          }}
+          onCompleted={() => {
+            window.sessionStorage.removeItem("profileOnboardingSkipped");
+            setShowOnboarding(false);
+          }}
+        />
+      )}
     </div>
   );
 }

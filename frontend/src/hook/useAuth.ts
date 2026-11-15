@@ -66,6 +66,7 @@ export function useAuth() {
   const login = useCallback(
     async (data: LoginRequest) => {
       const result = await run(() => request<LoginResponse>("login", data));
+      window.sessionStorage.removeItem("profileOnboardingSkipped");
       window.localStorage.setItem("accessToken", result.accessToken);
       window.localStorage.setItem("accountRole", result.role ?? "");
       window.localStorage.setItem("accountEmail", result.email);

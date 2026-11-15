@@ -176,6 +176,12 @@ public class ProfileService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public boolean hasCurrentProfile() {
+        Account account = accountService.getCurrentAccount();
+        return profileRepository.existsByAccount(account);
+    }
+
     @Transactional
     public void update(ProfileRequestDTO dto) {
         Account account = accountService.getCurrentAccount();

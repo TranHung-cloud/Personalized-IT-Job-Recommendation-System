@@ -20,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 public class CompanyController {
     private final CompanyService companyService;
 
-    @GetMapping
+    @GetMapping("/search")
     public ResponseEntity<List<CompanySuggestionDTO>> searchCompanies(
             @RequestParam(defaultValue = "") String keyword,
             HttpServletRequest request) {

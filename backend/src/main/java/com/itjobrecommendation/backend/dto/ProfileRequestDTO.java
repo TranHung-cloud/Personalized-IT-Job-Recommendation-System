@@ -9,9 +9,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 @Getter
 @Setter
 public class ProfileRequestDTO {
@@ -22,5 +24,5 @@ public class ProfileRequestDTO {
     private List<UUID> wmIds;
     private List<UUID> posIds;
     private List<@Valid WorkExperienceCreateDTO> workExperiences;
-    private List<DegreeCreateDTO> degrees;
+    private List<@Valid DegreeCreateDTO> degrees;
 }

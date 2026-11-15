@@ -14,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import jakarta.validation.Valid;
 
 @RestController
@@ -23,11 +25,22 @@ public class ProfileController {
 
     private final ProfileService profileService;
 
-    @PostMapping()
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> create(
             @Valid @RequestBody ProfileRequestDTO dto) {
         profileService.create(dto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> createMultipart(@Valid @ModelAttribute ProfileRequestDTO dto) {
+        profileService.create(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @GetMapping("/exists")
+    public ResponseEntity<Boolean> exists() {
+        return ResponseEntity.ok(profileService.hasCurrentProfile());
     }
 
     @GetMapping()
