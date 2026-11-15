@@ -13,12 +13,40 @@ export type WorkExperienceInput = {
 };
 
 export type DegreeInput = {
+  id?: string;
   degMajor: string;
   degInstitution: string;
   degSignedBy: string;
   degIssuedAt: string;
   qualId: string;
-  degImage: File;
+  degImage?: File;
+};
+
+export type ProfileWorkExperience = {
+  company: ProfileOption;
+  position: ProfileOption;
+  startAt: string;
+  endAt: string | null;
+};
+
+export type ProfileDegree = {
+  id: string;
+  degMajor: string;
+  degInstitution: string;
+  degSignedBy: string;
+  degImgPath: string;
+  degIssuedAt: string;
+  qual: ProfileOption;
+};
+
+export type ProfileView = {
+  exptSalMin: number | null;
+  skill: ProfileOption[];
+  loc: ProfileOption[];
+  wm: ProfileOption[];
+  pos: ProfileOption[];
+  workExperiences: ProfileWorkExperience[];
+  degrees: ProfileDegree[];
 };
 
 export type ProfileOnboardingRequest = {

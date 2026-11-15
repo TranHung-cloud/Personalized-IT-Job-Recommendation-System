@@ -2,10 +2,10 @@
 
 import { useCallback, useState } from "react";
 import type {
-  DegreeInput,
   ProfileOnboardingOptions,
   ProfileOnboardingRequest,
   ProfileOption,
+  ProfileView,
   QualificationOption,
 } from "@/type/profile";
 
@@ -44,6 +44,40 @@ async function authenticatedRequest<T>(path: string, token: string, init?: Reque
   return undefined as T;
 }
 
+function profileToFormData(profile: ProfileOnboardingRequest) {
+  const formData = new FormData();
+  const appendValue = (name: string, value: string | number | null | undefined) => {
+    if (value !== null && value !== undefined && value !== "") {
+      formData.append(name, String(value));
+    }
+  };
+
+  appendValue("exptSalMin", profile.exptSalMin);
+  profile.skillIds.forEach((id) => formData.append("skillIds", id));
+  profile.locIds.forEach((id) => formData.append("locIds", id));
+  profile.wmIds.forEach((id) => formData.append("wmIds", id));
+  profile.posIds.forEach((id) => formData.append("posIds", id));
+  profile.workExperiences.forEach((experience, index) => {
+    const prefix = `workExperiences[${index}]`;
+    appendValue(`${prefix}.companyName`, experience.companyName);
+    appendValue(`${prefix}.posId`, experience.posId);
+    appendValue(`${prefix}.startAt`, experience.startAt);
+    appendValue(`${prefix}.endAt`, experience.endAt);
+  });
+  profile.degrees.forEach((degree, index) => {
+    const prefix = `degrees[${index}]`;
+    appendValue(`${prefix}.id`, degree.id);
+    appendValue(`${prefix}.degMajor`, degree.degMajor);
+    appendValue(`${prefix}.degInstitution`, degree.degInstitution);
+    appendValue(`${prefix}.degSignedBy`, degree.degSignedBy);
+    appendValue(`${prefix}.degIssuedAt`, degree.degIssuedAt);
+    appendValue(`${prefix}.qualId`, degree.qualId);
+    if (degree.degImage) formData.append(`${prefix}.degImage`, degree.degImage);
+  });
+
+  return formData;
+}
+
 export function useProfile() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,6 +102,25 @@ export function useProfile() {
     [run],
   );
 
+  const getProfile = useCallback(
+    (token: string) => run(() => authenticatedRequest<ProfileView>("/api/profiles", token)),
+    [run],
+  );
+
+  const getDegreeImage = useCallback(async (token: string, degreeId: string) => {
+    let response: Response;
+    try {
+      response = await fetch(`${API_URL}/api/profiles/degrees/${degreeId}/image`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch {
+      throw new Error("Không thể kết nối máy chủ để tải ảnh bằng cấp.");
+    }
+    if (response.status === 401) throw new Error("SESSION_EXPIRED");
+    if (!response.ok) throw new Error("Không thể tải ảnh bằng cấp.");
+    return URL.createObjectURL(await response.blob());
+  }, []);
+
   const getOptions = useCallback(
     (token: string) =>
       run(async (): Promise<ProfileOnboardingOptions> => {
@@ -86,42 +139,24 @@ export function useProfile() {
   const createProfile = useCallback(
     (token: string, profile: ProfileOnboardingRequest) =>
       run(async () => {
-        const formData = new FormData();
-        const appendValue = (name: string, value: string | number | null | undefined) => {
-          if (value !== null && value !== undefined && value !== "") {
-            formData.append(name, String(value));
-          }
-        };
-
-        appendValue("exptSalMin", profile.exptSalMin);
-        profile.skillIds.forEach((id) => formData.append("skillIds", id));
-        profile.locIds.forEach((id) => formData.append("locIds", id));
-        profile.wmIds.forEach((id) => formData.append("wmIds", id));
-        profile.posIds.forEach((id) => formData.append("posIds", id));
-        profile.workExperiences.forEach((experience, index) => {
-          const prefix = `workExperiences[${index}]`;
-          appendValue(`${prefix}.companyName`, experience.companyName);
-          appendValue(`${prefix}.posId`, experience.posId);
-          appendValue(`${prefix}.startAt`, experience.startAt);
-          appendValue(`${prefix}.endAt`, experience.endAt);
-        });
-        profile.degrees.forEach((degree: DegreeInput, index) => {
-          const prefix = `degrees[${index}]`;
-          appendValue(`${prefix}.degMajor`, degree.degMajor);
-          appendValue(`${prefix}.degInstitution`, degree.degInstitution);
-          appendValue(`${prefix}.degSignedBy`, degree.degSignedBy);
-          appendValue(`${prefix}.degIssuedAt`, degree.degIssuedAt);
-          appendValue(`${prefix}.qualId`, degree.qualId);
-          formData.append(`${prefix}.degImage`, degree.degImage);
-        });
-
         await authenticatedRequest<void>("/api/profiles", token, {
           method: "POST",
-          body: formData,
+          body: profileToFormData(profile),
         });
       }),
     [run],
   );
 
-  return { hasProfile, getOptions, createProfile, isLoading, error, clearError };
+  const updateProfile = useCallback(
+    (token: string, profile: ProfileOnboardingRequest) =>
+      run(async () => {
+        await authenticatedRequest<void>("/api/profiles", token, {
+          method: "PUT",
+          body: profileToFormData(profile),
+        });
+      }),
+    [run],
+  );
+
+  return { hasProfile, getProfile, getDegreeImage, getOptions, createProfile, updateProfile, isLoading, error, clearError };
 }

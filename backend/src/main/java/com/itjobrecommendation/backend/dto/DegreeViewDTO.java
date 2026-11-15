@@ -1,6 +1,7 @@
 package com.itjobrecommendation.backend.dto;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -12,6 +13,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class DegreeViewDTO {
+    private UUID id;
     private String degMajor;
     private String degInstitution;
     private String degSignedBy;

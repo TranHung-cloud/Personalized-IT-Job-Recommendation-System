@@ -12,6 +12,7 @@ import com.itjobrecommendation.backend.dto.OptionViewDTO;
 import com.itjobrecommendation.backend.dto.DegreeCreateDTO;
 import com.itjobrecommendation.backend.dto.DegreeViewDTO;
 import com.itjobrecommendation.backend.dto.ProfileRequestDTO;
+import com.itjobrecommendation.backend.dto.ProfileUpdateRequestDTO;
 import com.itjobrecommendation.backend.dto.ProfileViewDTO;
 import com.itjobrecommendation.backend.dto.WorkExperienceCreateDTO;
 import com.itjobrecommendation.backend.dto.WorkExperienceViewDTO;
@@ -146,6 +147,15 @@ public class ProfileService {
         if (profileRepository.existsByAccount(account)) {
             throw new IllegalArgumentException("Hồ sơ đã tồn tại");
         }
+        if (dto.getExptSalMin() == null
+                && (dto.getSkillIds() == null || dto.getSkillIds().isEmpty())
+                && (dto.getPosIds() == null || dto.getPosIds().isEmpty())
+                && (dto.getLocIds() == null || dto.getLocIds().isEmpty())
+                && (dto.getWmIds() == null || dto.getWmIds().isEmpty())
+                && (dto.getWorkExperiences() == null || dto.getWorkExperiences().isEmpty())
+                && (dto.getDegrees() == null || dto.getDegrees().isEmpty())) {
+            return;
+        }
         Profile profile = new Profile();
         profile.setAccount(account);
         profile.setExpectedSalaryMin(dto.getExptSalMin());
@@ -183,7 +193,7 @@ public class ProfileService {
     }
 
     @Transactional
-    public void update(ProfileRequestDTO dto) {
+    public void update(ProfileUpdateRequestDTO dto) {
         Account account = accountService.getCurrentAccount();
         Profile profile = profileRepository.findByAccount(account)
                 .orElseThrow(() -> new IllegalArgumentException("Hồ sơ không tồn tại"));
@@ -205,6 +215,8 @@ public class ProfileService {
         if (dto.getWmIds() != null && !dto.getWmIds().isEmpty()) {
             assignWorkModes(profile, dto.getWmIds());
         }
+        workExperienceService.replaceForProfile(profile, dto.getWorkExperiences());
+        degreesService.updateForProfile(profile, dto.getDegrees());
     }
 
     @Transactional(readOnly = true)
@@ -242,5 +254,13 @@ public class ProfileService {
                 positions,
                 workExperiences,
                 degrees);
+    }
+
+    @Transactional(readOnly = true)
+    public MediaService.StoredImage getDegreeImage(UUID degreeId) {
+        Account account = accountService.getCurrentAccount();
+        Profile profile = profileRepository.findByAccount(account)
+                .orElseThrow(() -> new IllegalArgumentException("Hồ sơ không tồn tại"));
+        return degreesService.getImageForProfile(profile, degreeId);
     }
 }

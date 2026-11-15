@@ -1,6 +1,7 @@
 package com.itjobrecommendation.backend.repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,4 +13,6 @@ import com.itjobrecommendation.backend.entity.Profile;
 public interface DegreeRepository extends JpaRepository<Degree, UUID> {
     @EntityGraph(attributePaths = "qualification")
     List<Degree> findByProfile(Profile profile);
+
+    Optional<Degree> findByIdAndProfile(UUID id, Profile profile);
 }

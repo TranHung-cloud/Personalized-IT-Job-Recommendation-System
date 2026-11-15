@@ -1,5 +1,5 @@
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 
-export default function UserLayout({ children }: LayoutProps<"/user">) {
+export default function ProfileLayout({ children }: LayoutProps<"/profile">) {
   return <DashboardShell variant="user">{children}</DashboardShell>;
 }

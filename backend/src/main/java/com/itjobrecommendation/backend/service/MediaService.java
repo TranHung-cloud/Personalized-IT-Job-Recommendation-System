@@ -6,8 +6,8 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,6 +18,8 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
 @Service
 @RequiredArgsConstructor
@@ -90,7 +92,7 @@ public class MediaService {
         }
     }
 
-    public byte[] getCertificationImage(String key) {
+    public StoredImage getCertificationImage(String key) {
         if (!StringUtils.hasText(key)) {
             throw new IllegalArgumentException("Object key must not be blank");
         }
@@ -104,11 +106,17 @@ public class MediaService {
                 .build();
 
         try {
-            return s3Client.getObjectAsBytes(request).asByteArray();
+            ResponseBytes<GetObjectResponse> response = s3Client.getObjectAsBytes(request);
+            String contentType = response.response().contentType();
+            return new StoredImage(
+                    response.asByteArray(),
+                    StringUtils.hasText(contentType) ? contentType : MediaType.APPLICATION_OCTET_STREAM_VALUE);
         } catch (SdkException e) {
             throw new MediaStorageException("Failed to get certification image", e);
         }
     }
+
+    public record StoredImage(byte[] bytes, String contentType) {}
 
     public static class MediaStorageException extends RuntimeException {
         public MediaStorageException(String message, Throwable cause) {

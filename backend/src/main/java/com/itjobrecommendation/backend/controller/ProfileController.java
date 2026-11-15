@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.http.MediaType;
@@ -36,6 +37,12 @@ public class ProfileController {
     public ResponseEntity<Void> createMultipart(@Valid @ModelAttribute ProfileRequestDTO dto) {
         profileService.create(dto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> updateMultipart(@Valid @ModelAttribute com.itjobrecommendation.backend.dto.ProfileUpdateRequestDTO dto) {
+        profileService.update(dto);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/exists")
