@@ -47,6 +47,11 @@ from crawl.matcher import (
     dictionary_match,
     match_raw_names,
 )
+from crawl.captcha_check import (
+    is_challenge,
+    click_checkbox,
+    clear_challenge,
+)
 
 class NextRedirectError(ValueError):
     def __init__(self, target_url):
@@ -528,6 +533,14 @@ def crawl_topcv_job(url, page, lookup_pos, lookup_wm, lookup_loc, lookup_sk, loo
         timeout=60000
     )
     wait_and_scroll(page)
+
+    if is_challenge(page):
+        print("[CF] Phát hiện challenge Cloudflare, đang xử lý...")
+        click_checkbox(page)
+        if not clear_challenge(page, timeout=60):
+            raise TimeoutError("Không thể xử lý Cloudflare challenge")
+        print("[CF] Đã xử lý challenge")
+
     locator = page.locator('script[type="application/ld+json"]')
     script_content = locator.all_text_contents()
     job_posting_found = False

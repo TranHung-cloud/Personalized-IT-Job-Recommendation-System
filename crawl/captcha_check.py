@@ -13,8 +13,6 @@ def is_challenge(page):
 
 
 def click_checkbox(page):
-    """Click checkbox theo toạ độ. Iframe nằm trong shadow root đóng nên
-    lấy vị trí từ input hidden cf-turnstile-response (nằm ngoài, ở light DOM)."""
     inp = page.locator('input[name="cf-turnstile-response"]').first
     if inp.count() == 0:
         return False
