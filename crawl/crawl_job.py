@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 import requests
 from pprint import pprint
+import hashlib
 
 from crawl.browser_interact import (
     create_browser_context,
@@ -66,6 +67,52 @@ SOURCE_STATUS_PENDING = "pending"
 SOURCE_STATUS_CRAWLED = "crawled"
 SOURCE_STATUS_ERROR = "error"
 SOURCE_STATUS_DUPLICATE = "duplicate"
+
+def normalize_datetime(value):
+    if not value:
+        return ""
+
+    if isinstance(value, str):
+        value = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+
+    return value.astimezone(timezone.utc).isoformat()
+
+def generate_job_hash(job_data):
+    content = {
+        "company": str(job_data.get("co_id") or ""),
+        "title": normalize_string(job_data.get("job_title_norm") or ""),
+        "expired_at": normalize_datetime(job_data.get("job_expired_at")),
+        "description": normalize_string(job_data.get("job_desc") or ""),
+        "benefit": normalize_string(job_data.get("job_benefit") or ""),
+        "requirement": normalize_string(job_data.get("job_req") or ""),
+    }
+
+    raw_content = json.dumps(
+        content,
+        ensure_ascii=False,
+        sort_keys=True
+    )
+
+    return hashlib.sha256(raw_content.encode("utf-8")).hexdigest()
+
+def load_existing_hashes():
+    rows = execute_query("""
+        SELECT
+            co_id,
+            job_title_norm,
+            job_expired_at,
+            job_desc,
+            job_benefit,
+            job_req
+        FROM job
+    """, fetch=True)
+
+    return {
+        generate_job_hash(row)
+        for row in rows
+    }
 
 def _unique_matches(matches):
     unique = []
@@ -250,18 +297,8 @@ def save_job_to_db(job_data, raw_jd_json):
     """
 
     with pool.connection() as conn:
-        existing = None
-        if job_data.get("job_title_norm") and job_data.get("co_id"):
-            existing = execute_query(
-                """SELECT job_id FROM job
-                   WHERE job_title_norm = %(job_title_norm)s
-                     AND co_id = %(co_id)s
-                   ORDER BY job_posted_at DESC NULLS LAST
-                   LIMIT 1""",
-                job_data, fetch="one", conn=conn,
-            )
-
-        if existing:
+        job_hash = generate_job_hash(job_data)
+        if job_hash in seen_hash:
             execute_query(
                 "UPDATE source SET src_status = %s, src_crawled_at = NOW() WHERE src_id = %s",
                 (SOURCE_STATUS_DUPLICATE, job_data["src_id"]),
@@ -271,6 +308,8 @@ def save_job_to_db(job_data, raw_jd_json):
 
         row = execute_query(query, job_data, fetch="one", conn=conn)
         job_id = row["job_id"]
+        if job_id:
+            seen_hash.add(job_hash)
 
         execute_query(
             """
@@ -861,6 +900,7 @@ def main():
     lookup_sk = build_raw_lookup("sk")
     lookup_com = build_raw_lookup("com")
     lookups = (lookup_pos, lookup_wm, lookup_loc, lookup_sk, lookup_com)
+    seen_hash = load_existing_hashes()
     with sync_playwright() as p:
         proxy = None
         if PROXY_MODE == MODE.PROXY:
