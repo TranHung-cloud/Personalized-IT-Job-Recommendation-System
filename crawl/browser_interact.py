@@ -43,7 +43,7 @@ def create_browser_context(playwright, proxy=None):
     context_options = {
         "user_data_dir": profile_dir,
         "channel": "chrome",
-        "headless": True,
+        "headless": False,
         "locale": "vi-VN",
         "timezone_id": "Asia/Ho_Chi_Minh",
         "viewport": {
