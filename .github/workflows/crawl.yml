@@ -24,6 +24,15 @@ jobs:
           pip install -r crawl/requirements.txt
           python -m playwright install --with-deps chromium
 
+      - name: Install Google Chrome
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+
+      - name: Install Xvfb
+        run: |
+          sudo apt-get install -y xvfb
+
       - name: Determine crawl task
         id: task
         run: |

@@ -3,7 +3,7 @@ import time
 import json
 import re
 import pandas as pd
-from datetime import date
+from datetime import date, timezone, datetime
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 import requests
@@ -72,13 +72,27 @@ SOURCE_STATUS_PENDING = "pending"
 SOURCE_STATUS_CRAWLED = "crawled"
 SOURCE_STATUS_ERROR = "error"
 SOURCE_STATUS_DUPLICATE = "duplicate"
+seen_hash = set()
 
 def normalize_datetime(value):
-    if not value:
+    if value is None:
         return ""
 
     if isinstance(value, str):
-        value = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        try:
+            value = datetime.fromisoformat(
+                value.replace("Z", "+00:00")
+            )
+        except ValueError:
+            return value
+
+    if isinstance(value, date) and not isinstance(value, datetime):
+        value = datetime.combine(
+            value,
+            datetime.min.time(),
+            tzinfo=timezone.utc
+        )
+
     if value.tzinfo is None:
         value = value.replace(tzinfo=timezone.utc)
 
@@ -376,13 +390,22 @@ def save_job_to_db(job_data, raw_jd_json):
     return job_id
 
 def crawl_itviec_job(url, page, lookup_pos, lookup_wm, lookup_loc, lookup_sk, lookup_com):
-    page.goto(
+    response = page.goto(
         url["url"],
         wait_until="domcontentloaded",
         timeout=60000
     )
+    print("Status:", response.status)
+    print("URL:", page.url)
+    print("Title:", page.title())
+
+    print("Response headers:")
+    print(response.headers)
+
+    print("HTML:")
+    print(page.locator("body").inner_text()[:3000])
     wait_and_scroll(page)
-    locator = page.locator('script[type="application/ld+json"]')
+    locator = page.locator("script[type='application/ld+json']")
     script_content = locator.all_text_contents()
     data = None
     for script in script_content:
@@ -429,6 +452,7 @@ def crawl_itviec_job(url, page, lookup_pos, lookup_wm, lookup_loc, lookup_sk, lo
             locations = _unique_matches(location_matches)
             # company
             company_raw = data.get("hiringOrganization", {}).get("name")
+            company_logo = data.get("hiringOrganization", {}).get("logo")
             company_matches = match_raw_names(
                 lookup_com,
                 [normalize_company(company_raw)] if company_raw else [],
@@ -914,6 +938,7 @@ def main():
     lookup_com = build_raw_lookup("com")
     lookups = (lookup_pos, lookup_wm, lookup_loc, lookup_sk, lookup_com)
     seen_hash = load_existing_hashes()
+    total_job = 0
     with sync_playwright() as p:
         proxy = None
         if PROXY_MODE == MODE.PROXY:
@@ -931,15 +956,16 @@ def main():
                         if site_name == "itviec":
                             job_data, raw_jd_json = crawl_itviec_job(source_info, page, *lookups)
                         elif site_name == "topcv":
-                            job_data, raw_jd_json = crawl_topcv_job(source_info, page, *lookups)
+                            # job_data, raw_jd_json = crawl_topcv_job(source_info, page, *lookups)
+                            continue
                         elif site_name == "vietnamworks":
-                            job_data, raw_jd_json = crawl_vietnamworks_job(source_info, proxy, *lookups)
+                            # job_data, raw_jd_json = crawl_vietnamworks_job(source_info, proxy, *lookups)
+                            continue
                         else:
                             raise ValueError(f"Site chưa hỗ trợ: {source['site_name']}")
                         save_job_to_db(job_data, raw_jd_json)
-                        print("============================================================")
-                        print(site_name)
-                        pprint(job_data, indent=4, width=120, sort_dicts=False)
+                        total_job += 1
+                        print(f"{total_job}. [MAIN] Thành công: {source_info['url']}")
                         succeeded = True
                         break
                     except Exception as exc:
