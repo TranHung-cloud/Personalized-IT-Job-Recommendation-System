@@ -32,6 +32,7 @@ from crawl.database import (
     close_connection,
     pool,
     save_raw_jd_to_bucket,
+    save_company_logo_to_bucket
 )
 from crawl.jd_parser import (
     normalize_string,
@@ -348,6 +349,23 @@ def save_job_to_db(job_data, raw_jd_json):
             conn=conn
         )
 
+        company = execute_query(
+            """
+                SELECT co_logo_path FROM company WHERE co_id = %s
+            """, (job_data["co_id"],), fetch="one", conn=conn)
+        if company and not company["co_logo_path"]:
+            co_logo_path = save_company_logo_to_bucket(job_data["co_id"], job_data.get("company_logo"))
+            if co_logo_path:
+                execute_query(
+                    """
+                    UPDATE company
+                    SET co_logo_path = %s
+                    WHERE co_id = %s
+                    """,
+                    (co_logo_path, job_data["co_id"]),
+                    conn=conn
+                )
+
         for skill in job_data.get("job_skills") or []:
             execute_query(
                 """
@@ -395,15 +413,6 @@ def crawl_itviec_job(url, page, lookup_pos, lookup_wm, lookup_loc, lookup_sk, lo
         wait_until="domcontentloaded",
         timeout=60000
     )
-    print("Status:", response.status)
-    print("URL:", page.url)
-    print("Title:", page.title())
-
-    print("Response headers:")
-    print(response.headers)
-
-    print("HTML:")
-    print(page.locator("body").inner_text()[:3000])
     wait_and_scroll(page)
     locator = page.locator("script[type='application/ld+json']")
     script_content = locator.all_text_contents()
@@ -546,6 +555,7 @@ def crawl_itviec_job(url, page, lookup_pos, lookup_wm, lookup_loc, lookup_sk, lo
         "job_req": requirement,
         "job_skills": skills if skills else None,
         "job_locations": locations if locations else None,
+        "company_logo": company_logo if company_logo else None,
     }
 
     return job_data, raw_jd_json
@@ -614,6 +624,7 @@ def crawl_topcv_job(url, page, lookup_pos, lookup_wm, lookup_loc, lookup_sk, loo
             locations = _unique_matches(location_matches)
             # company
             company_raw = data.get("hiringOrganization", {}).get("name")
+            company_logo = data.get("hiringOrganization", {}).get("logo")
             company_matches = match_raw_names(
                 lookup_com,
                 [normalize_company(company_raw)] if company_raw else [],
@@ -727,6 +738,7 @@ def crawl_topcv_job(url, page, lookup_pos, lookup_wm, lookup_loc, lookup_sk, loo
         "job_req": requirement,
         "job_skills": skills if skills else None,
         "job_locations": locations if locations else None,
+        "company_logo": company_logo if company_logo else None,
     }
     return job_data, raw_jd_json     
 
@@ -811,6 +823,7 @@ def crawl_vietnamworks_job(url, proxy, lookup_pos, lookup_wm, lookup_loc, lookup
     benefits = html_to_text(benefit_html)
 
     company_raw = data.get("companyName")
+    company_logo = data.get("companyLogoURL")
     company_matches = match_raw_names(
         lookup_com,
         [normalize_company(company_raw)] if company_raw else [],
@@ -956,11 +969,9 @@ def main():
                         if site_name == "itviec":
                             job_data, raw_jd_json = crawl_itviec_job(source_info, page, *lookups)
                         elif site_name == "topcv":
-                            # job_data, raw_jd_json = crawl_topcv_job(source_info, page, *lookups)
-                            continue
+                            job_data, raw_jd_json = crawl_topcv_job(source_info, page, *lookups)
                         elif site_name == "vietnamworks":
-                            # job_data, raw_jd_json = crawl_vietnamworks_job(source_info, proxy, *lookups)
-                            continue
+                            job_data, raw_jd_json = crawl_vietnamworks_job(source_info, proxy, *lookups)
                         else:
                             raise ValueError(f"Site chưa hỗ trợ: {source['site_name']}")
                         save_job_to_db(job_data, raw_jd_json)

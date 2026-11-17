@@ -9,7 +9,8 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE TABLE company (
     co_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     co_name VARCHAR(255) NOT NULL,
-    co_name_norm VARCHAR(255)
+    co_name_norm VARCHAR(255),
+    co_logo_path TEXT
 );
 
 CREATE INDEX idx_company_name_norm
