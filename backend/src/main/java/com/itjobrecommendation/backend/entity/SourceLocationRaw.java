@@ -18,11 +18,11 @@ public class SourceLocationRaw {
 
     @MapsId("sourceId")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "source_id", nullable = false)
+    @JoinColumn(name = "src_id", nullable = false)
     private Source source;
 
     @MapsId("rawLocationName")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "loc_raw_name", nullable = false)
-    private Location location;
+    private LocationRaw locationRaw;
 }

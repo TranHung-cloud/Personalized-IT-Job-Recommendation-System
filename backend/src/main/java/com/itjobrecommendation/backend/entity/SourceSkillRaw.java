@@ -18,11 +18,11 @@ public class SourceSkillRaw {
 
     @MapsId("sourceId")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "source_id", nullable = false)
+    @JoinColumn(name = "src_id", nullable = false)
     private Source source;
 
     @MapsId("rawSkillName")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sk_raw_name", nullable = false)
-    private Skill skill;
+    private SkillRaw skillRaw;
 }
