@@ -49,6 +49,7 @@ public class SecurityConfig {
                 .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/error").permitAll()
+                        // .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST,
                                 "/api/accounts/register",
                                 "/api/accounts/verify-email",
