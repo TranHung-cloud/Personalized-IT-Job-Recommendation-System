@@ -6,10 +6,43 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import com.itjobrecommendation.backend.entity.Job;
 
 public interface JobRepository extends JpaRepository<Job, UUID> {
-    @EntityGraph(attributePaths = { "company", "position", "workMode", "qualification" })
-    List<Job> findByExpiredAtGreaterThanEqual(OffsetDateTime expirationBoundary);
+      @EntityGraph(attributePaths = { "company", "position", "workMode", "qualification" })
+      @Query("""
+                  select j
+                  from Job j
+                  join j.source s
+                  where j.expiredAt >= :expirationBoundary
+                    and (s.positionRaw is null or s.positionRaw.status not in (
+                          com.itjobrecommendation.backend.entity.enums.RawValueStatus.PENDING,
+                          com.itjobrecommendation.backend.entity.enums.RawValueStatus.REVIEW
+                    ))
+                    and (s.workModeRaw is null or s.workModeRaw.status not in (
+                          com.itjobrecommendation.backend.entity.enums.RawValueStatus.PENDING,
+                          com.itjobrecommendation.backend.entity.enums.RawValueStatus.REVIEW
+                    ))
+                    and not exists (
+                          select ssr
+                          from SourceSkillRaw ssr
+                          where ssr.source = s
+                            and ssr.skillRaw.status in (
+                                  com.itjobrecommendation.backend.entity.enums.RawValueStatus.PENDING,
+                                  com.itjobrecommendation.backend.entity.enums.RawValueStatus.REVIEW
+                            )
+                    )
+                    and not exists (
+                          select slr
+                          from SourceLocationRaw slr
+                          where slr.source = s
+                            and slr.locationRaw.status in (
+                                  com.itjobrecommendation.backend.entity.enums.RawValueStatus.PENDING,
+                                  com.itjobrecommendation.backend.entity.enums.RawValueStatus.REVIEW
+                            )
+                    )
+                  """)
+      List<Job> findEligibleJobsByExpirationBoundary(OffsetDateTime expirationBoundary);
 }

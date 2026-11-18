@@ -124,7 +124,7 @@ public class MatchService {
         LocalDate tomorrowInVietnam = LocalDate.now(clock.withZone(VIETNAM_ZONE)).plusDays(1);
         OffsetDateTime expirationBoundary = tomorrowInVietnam.atStartOfDay(VIETNAM_ZONE).toOffsetDateTime();
 
-        List<Job> candidateJobs = jobRepository.findByExpiredAtGreaterThanEqual(expirationBoundary);
+        List<Job> candidateJobs = jobRepository.findEligibleJobsByExpirationBoundary(expirationBoundary);
         if (candidateJobs.isEmpty()) {
             return new MatchResponseDTO(List.of(), matchProfile.missingFields());
         }
