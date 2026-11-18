@@ -11,8 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.itjobrecommendation.backend.dto.OptionViewDTO;
 import com.itjobrecommendation.backend.dto.DegreeCreateDTO;
 import com.itjobrecommendation.backend.dto.DegreeViewDTO;
-import com.itjobrecommendation.backend.dto.ProfileRequestDTO;
-import com.itjobrecommendation.backend.dto.ProfileUpdateRequestDTO;
+import com.itjobrecommendation.backend.dto.ProfileCreateDTO;
+import com.itjobrecommendation.backend.dto.ProfileUpdateDTO;
 import com.itjobrecommendation.backend.dto.ProfileViewDTO;
 import com.itjobrecommendation.backend.dto.WorkExperienceCreateDTO;
 import com.itjobrecommendation.backend.dto.WorkExperienceViewDTO;
@@ -142,7 +142,7 @@ public class ProfileService {
     }
 
     @Transactional
-    public void create(ProfileRequestDTO dto) {
+    public void create(ProfileCreateDTO dto) {
         Account account = accountService.getCurrentAccount();
         if (profileRepository.existsByAccount(account)) {
             throw new IllegalArgumentException("Hồ sơ đã tồn tại");
@@ -193,7 +193,7 @@ public class ProfileService {
     }
 
     @Transactional
-    public void update(ProfileUpdateRequestDTO dto) {
+    public void update(ProfileUpdateDTO dto) {
         Account account = accountService.getCurrentAccount();
         Profile profile = profileRepository.findByAccount(account)
                 .orElseThrow(() -> new IllegalArgumentException("Hồ sơ không tồn tại"));

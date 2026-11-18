@@ -4,7 +4,7 @@ import com.itjobrecommendation.backend.service.ProfileService;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.itjobrecommendation.backend.dto.ProfileRequestDTO;
+import com.itjobrecommendation.backend.dto.ProfileCreateDTO;
 import com.itjobrecommendation.backend.dto.ProfileViewDTO;
 
 import lombok.RequiredArgsConstructor;
@@ -28,19 +28,20 @@ public class ProfileController {
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> create(
-            @Valid @RequestBody ProfileRequestDTO dto) {
+            @Valid @RequestBody ProfileCreateDTO dto) {
         profileService.create(dto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Void> createMultipart(@Valid @ModelAttribute ProfileRequestDTO dto) {
+    public ResponseEntity<Void> createMultipart(@Valid @ModelAttribute ProfileCreateDTO dto) {
         profileService.create(dto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Void> updateMultipart(@Valid @ModelAttribute com.itjobrecommendation.backend.dto.ProfileUpdateRequestDTO dto) {
+    public ResponseEntity<Void> updateMultipart(
+            @Valid @ModelAttribute com.itjobrecommendation.backend.dto.ProfileUpdateDTO dto) {
         profileService.update(dto);
         return ResponseEntity.noContent().build();
     }
