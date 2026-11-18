@@ -159,8 +159,8 @@ public class AccountService {
         return accountsPage.map(account -> {
             Map<UserInteractionAction, Integer> counts = interactionCountMap.getOrDefault(account.getId(),
                     Collections.emptyMap());
-            int interestedCount = counts.getOrDefault(UserInteractionAction.INTEREST, 0);
-            int ignoredCount = counts.getOrDefault(UserInteractionAction.IGNORE, 0);
+            int interestedCount = counts.getOrDefault(UserInteractionAction.interest, 0);
+            int ignoredCount = counts.getOrDefault(UserInteractionAction.ignore, 0);
 
             return AccountViewDTO.builder()
                     .email(account.getEmail())
