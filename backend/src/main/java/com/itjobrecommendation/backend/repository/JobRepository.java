@@ -18,20 +18,20 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
                   join j.source s
                   where j.expiredAt >= :expirationBoundary
                     and (s.positionRaw is null or s.positionRaw.status not in (
-                          com.itjobrecommendation.backend.entity.enums.RawValueStatus.PENDING,
-                          com.itjobrecommendation.backend.entity.enums.RawValueStatus.REVIEW
+                          com.itjobrecommendation.backend.entity.enums.RawValueStatus.pending,
+                          com.itjobrecommendation.backend.entity.enums.RawValueStatus.review
                     ))
                     and (s.workModeRaw is null or s.workModeRaw.status not in (
-                          com.itjobrecommendation.backend.entity.enums.RawValueStatus.PENDING,
-                          com.itjobrecommendation.backend.entity.enums.RawValueStatus.REVIEW
+                          com.itjobrecommendation.backend.entity.enums.RawValueStatus.pending,
+                          com.itjobrecommendation.backend.entity.enums.RawValueStatus.review
                     ))
                     and not exists (
                           select ssr
                           from SourceSkillRaw ssr
                           where ssr.source = s
                             and ssr.skillRaw.status in (
-                                  com.itjobrecommendation.backend.entity.enums.RawValueStatus.PENDING,
-                                  com.itjobrecommendation.backend.entity.enums.RawValueStatus.REVIEW
+                                  com.itjobrecommendation.backend.entity.enums.RawValueStatus.pending,
+                                  com.itjobrecommendation.backend.entity.enums.RawValueStatus.review
                             )
                     )
                     and not exists (
@@ -39,8 +39,8 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
                           from SourceLocationRaw slr
                           where slr.source = s
                             and slr.locationRaw.status in (
-                                  com.itjobrecommendation.backend.entity.enums.RawValueStatus.PENDING,
-                                  com.itjobrecommendation.backend.entity.enums.RawValueStatus.REVIEW
+                                  com.itjobrecommendation.backend.entity.enums.RawValueStatus.pending,
+                                  com.itjobrecommendation.backend.entity.enums.RawValueStatus.review
                             )
                     )
                   """)
