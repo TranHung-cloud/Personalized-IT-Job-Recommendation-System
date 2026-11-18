@@ -24,4 +24,6 @@ public class Company {
     private String name;
     @Column(name = "co_name_norm")
     private String normalizedName;
+    @Column(name = "co_logo_path")
+    private String logoPath;
 }
