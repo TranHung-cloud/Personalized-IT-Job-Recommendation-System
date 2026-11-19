@@ -12,23 +12,23 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.itjobrecommendation.backend.dto.LocationRawViewDTO;
+import com.itjobrecommendation.backend.dto.WorkModeRawViewDTO;
 import com.itjobrecommendation.backend.entity.enums.RawValueStatus;
-import com.itjobrecommendation.backend.service.LocationRawService;
+import com.itjobrecommendation.backend.service.WorkModeRawService;
 
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/admin/location-raws")
+@RequestMapping("/api/admin/work-mode-raws")
 @RequiredArgsConstructor
-public class AdminLocationRawController {
-    private final LocationRawService locationRawService;
+public class WorkModeRawController {
+    private final WorkModeRawService workModeRawService;
 
     @GetMapping
-    public ResponseEntity<Page<LocationRawViewDTO>> getLocationRaws(
-            @RequestParam(required = false) UUID locationId,
+    public ResponseEntity<Page<WorkModeRawViewDTO>> getWorkModeRaws(
+            @RequestParam(required = false) UUID workModeId,
             @RequestParam(required = false) RawValueStatus status,
             @PageableDefault(size = 10, sort = "rawCount", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(locationRawService.getLocationRaws(locationId, status, pageable));
+        return ResponseEntity.ok(workModeRawService.getWorkModeRaws(workModeId, status, pageable));
     }
 }

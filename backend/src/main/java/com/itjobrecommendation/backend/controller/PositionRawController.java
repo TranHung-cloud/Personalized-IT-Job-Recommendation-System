@@ -21,7 +21,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/admin/position-raws")
 @RequiredArgsConstructor
-public class AdminPositionRawController {
+public class PositionRawController {
     private final PositionRawService positionRawService;
 
     @GetMapping

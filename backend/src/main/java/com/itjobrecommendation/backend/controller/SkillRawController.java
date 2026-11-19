@@ -21,7 +21,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/admin/skill-raws")
 @RequiredArgsConstructor
-public class AdminSkillRawController {
+public class SkillRawController {
     private final SkillRawService skillRawService;
 
     @GetMapping
