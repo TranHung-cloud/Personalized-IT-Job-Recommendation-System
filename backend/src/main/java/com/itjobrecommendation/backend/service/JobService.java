@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -31,6 +30,7 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class JobService {
+    private final MediaService mediaService;
     private final JobRepository jobRepository;
     private final JobLocationRepository jobLocationRepository;
     private final JobSkillRepository jobSkillRepository;
@@ -234,5 +234,14 @@ public class JobService {
 
     private List<UUID> distinctIds(List<UUID> ids) {
         return ids == null ? null : ids.stream().distinct().toList();
+    }
+
+    public String getRawJobDescriptionJson(UUID jobId) {
+        Job job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new IllegalArgumentException("Việc làm không tồn tại"));
+        if (job.getSource() == null || isBlank(job.getSource().getRawKey())) {
+            throw new IllegalArgumentException("Mô tả việc làm chưa được lưu trữ");
+        }
+        return mediaService.getRawJobDescriptionJson(job.getSource().getRawKey());
     }
 }
