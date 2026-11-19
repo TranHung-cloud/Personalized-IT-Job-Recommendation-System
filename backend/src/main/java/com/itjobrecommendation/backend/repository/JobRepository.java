@@ -13,6 +13,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.Query;
 
 import com.itjobrecommendation.backend.entity.Job;
+import com.itjobrecommendation.backend.entity.Source;
 
 public interface JobRepository extends JpaRepository<Job, UUID>, JpaSpecificationExecutor<Job> {
       @Override
@@ -53,4 +54,6 @@ public interface JobRepository extends JpaRepository<Job, UUID>, JpaSpecificatio
                     )
                   """)
       List<Job> findEligibleJobsByExpirationBoundary(OffsetDateTime expirationBoundary);
+
+      List<Job> findBySourceIn(List<Source> sources);
 }

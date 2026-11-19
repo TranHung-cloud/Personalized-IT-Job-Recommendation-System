@@ -3,6 +3,7 @@ package com.itjobrecommendation.backend.entity;
 import com.itjobrecommendation.backend.entity.id.JobSkillId;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -12,6 +13,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
 public class JobSkill {
     @EmbeddedId
     private JobSkillId id;

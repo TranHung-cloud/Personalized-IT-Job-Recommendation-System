@@ -1,5 +1,6 @@
 package com.itjobrecommendation.backend.controller;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -12,11 +13,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.itjobrecommendation.backend.dto.MatchRawRequestDTO;
 import com.itjobrecommendation.backend.dto.PositionRawViewDTO;
 import com.itjobrecommendation.backend.entity.enums.RawValueStatus;
 import com.itjobrecommendation.backend.service.PositionRawService;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequestMapping("/api/admin/position-raws")
@@ -31,4 +35,18 @@ public class PositionRawController {
             @PageableDefault(size = 10, sort = "rawCount", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(positionRawService.getPositionRaws(positionId, status, pageable));
     }
+
+    @PostMapping("/match")
+    public ResponseEntity<Void> matchPositions(
+            @RequestBody List<MatchRawRequestDTO> requestDTOs) {
+        positionRawService.matchPositionRawsToCanonical(requestDTOs);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/ignore")
+    public ResponseEntity<Void> ignoreRaws(@RequestBody List<String> rawNames) {
+        positionRawService.ignoreRaws(rawNames);
+        return ResponseEntity.noContent().build();
+    }
+
 }
