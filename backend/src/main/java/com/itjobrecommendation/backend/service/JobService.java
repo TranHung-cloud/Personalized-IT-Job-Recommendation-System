@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.itjobrecommendation.backend.dto.JobAdminViewDTO;
-import com.itjobrecommendation.backend.dto.JobDetailAdminViewDTO;
 import com.itjobrecommendation.backend.dto.JobDetailViewDTO;
 import com.itjobrecommendation.backend.entity.Job;
 import com.itjobrecommendation.backend.entity.enums.UserInteractionAction;
@@ -116,17 +115,6 @@ public class JobService {
                 job.getSource() == null ? null : job.getSource().getUrl());
     }
 
-    @Transactional(readOnly = true)
-    public JobDetailAdminViewDTO getAdminView(UUID jobId) {
-        JobDetailViewDTO jobDetailViewDTO = getView(jobId);
-        JobDetailAdminViewDTO adminViewDTO = new JobDetailAdminViewDTO();
-        BeanUtils.copyProperties(jobDetailViewDTO, adminViewDTO);
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new IllegalArgumentException("Việc làm không tồn tại"));
-        adminViewDTO.setJsonPath(job.getSource().getRawKey());
-        return adminViewDTO;
-    }
-
     private String formatSalary(Job job) {
         if (Boolean.TRUE.equals(job.getSalaryNegotiable())) {
             return "Thương lượng";
@@ -216,7 +204,8 @@ public class JobService {
         addMissing(missingFields, job.getCompany() == null || isBlank(job.getCompany().getName()), "companyName");
         addMissing(missingFields, job.getCompany() == null || isBlank(job.getCompany().getLogoPath()), "companyLogo");
         addMissing(missingFields,
-                job.getSalaryMin() == null && job.getSalaryMax() == null && !Boolean.TRUE.equals(job.getSalaryNegotiable()),
+                job.getSalaryMin() == null && job.getSalaryMax() == null
+                        && !Boolean.TRUE.equals(job.getSalaryNegotiable()),
                 "salary");
         addMissing(missingFields, job.getExperienceMin() == null && job.getExperienceMax() == null, "experience");
         addMissing(missingFields, isBlank(job.getDescription()), "description");
