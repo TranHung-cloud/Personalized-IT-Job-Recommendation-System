@@ -41,6 +41,7 @@ export default function MatchPage() {
   const prefetchInFlight = useRef(false);
   const prefetchAttempted = useRef(false);
   const prefetchFailed = useRef(false);
+  const failedPrefetchExclusions = useRef<string[] | null>(null);
   const seenJobIds = useRef(new Set<string>());
   const popupOpen = false;
 
@@ -59,6 +60,7 @@ export default function MatchPage() {
     setMatchesExhausted(false);
     prefetchAttempted.current = false;
     prefetchFailed.current = false;
+    failedPrefetchExclusions.current = null;
     const token = window.localStorage.getItem("accessToken");
     if (!token) {
       endSession();
@@ -96,12 +98,15 @@ export default function MatchPage() {
     return () => window.clearTimeout(timeoutId);
   }, [loadMatches, reloadKey]);
 
-  const prefetchMatches = useCallback(async () => {
+  const prefetchMatches = useCallback(async (retry = false) => {
     if (prefetchInFlight.current || prefetchAttempted.current || matchesExhausted) return;
 
     const unhandledMatches = matches.slice(0, PREFETCH_THRESHOLD);
+    const excludeJobIds = retry
+      ? failedPrefetchExclusions.current
+      : unhandledMatches.map((match) => match.jobId);
     const token = window.localStorage.getItem("accessToken");
-    if (!token || unhandledMatches.length === 0) return;
+    if (!token || !excludeJobIds?.length) return;
 
     prefetchInFlight.current = true;
     prefetchAttempted.current = true;
@@ -109,7 +114,7 @@ export default function MatchPage() {
     try {
       const response = await getMatches(
         token,
-        unhandledMatches.map((match) => match.jobId),
+        excludeJobIds,
       );
       const newMatches = response.matches.filter((match) => !seenJobIds.current.has(match.jobId));
       newMatches.forEach((match) => seenJobIds.current.add(match.jobId));
@@ -118,6 +123,7 @@ export default function MatchPage() {
         mergeMissingProfileFields(current, response.missingProfileFields),
       );
       setMatchesExhausted(response.matches.length === 0);
+      failedPrefetchExclusions.current = null;
       if (response.matches.length > 0) prefetchAttempted.current = false;
     } catch (cause: unknown) {
       if (cause instanceof Error && cause.message === "SESSION_EXPIRED") {
@@ -126,6 +132,7 @@ export default function MatchPage() {
       }
       prefetchAttempted.current = false;
       prefetchFailed.current = true;
+      failedPrefetchExclusions.current = excludeJobIds;
       setPrefetchError(
         cause instanceof Error ? cause.message : "Không thể tải thêm việc làm. Vui lòng thử lại.",
       );
@@ -148,7 +155,7 @@ export default function MatchPage() {
 
   const retryPrefetch = useCallback(() => {
     prefetchFailed.current = false;
-    void prefetchMatches();
+    void prefetchMatches(true);
   }, [prefetchMatches]);
 
   const handleDecision = useCallback(
