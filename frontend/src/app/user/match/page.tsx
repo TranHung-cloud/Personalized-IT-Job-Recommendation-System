@@ -9,6 +9,13 @@ import { useProfile } from "@/hook/useProfile";
 import type { MatchAction, MatchingView } from "@/type/match";
 
 type ProfileState = "loading" | "missing" | "ready" | "error";
+type UndoRecord = { job: MatchingView; action: MatchAction };
+
+const PREFETCH_THRESHOLD = 5;
+
+function mergeMissingProfileFields(current: string[], incoming: string[]) {
+  return [...new Set([...current, ...incoming])];
+}
 
 function isInteractiveTarget(target: EventTarget | null) {
   return (
@@ -19,15 +26,22 @@ function isInteractiveTarget(target: EventTarget | null) {
 
 export default function MatchPage() {
   const { hasProfile } = useProfile();
-  const { getMatches, saveInteraction } = useMatch();
+  const { getMatches, saveInteraction, undoInteraction } = useMatch();
   const [profileState, setProfileState] = useState<ProfileState>("loading");
   const [matches, setMatches] = useState<MatchingView[]>([]);
   const [missingProfileFields, setMissingProfileFields] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [exitDirection, setExitDirection] = useState<MatchAction | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [prefetchError, setPrefetchError] = useState<string | null>(null);
+  const [undoRecord, setUndoRecord] = useState<UndoRecord | null>(null);
+  const [matchesExhausted, setMatchesExhausted] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
-  const decisionInFlight = useRef(false);
+  const interactionInFlight = useRef(false);
+  const prefetchInFlight = useRef(false);
+  const prefetchAttempted = useRef(false);
+  const prefetchFailed = useRef(false);
+  const seenJobIds = useRef(new Set<string>());
   const popupOpen = false;
 
   const endSession = useCallback(() => {
@@ -40,6 +54,11 @@ export default function MatchPage() {
   const loadMatches = useCallback(async () => {
     setProfileState("loading");
     setError(null);
+    setPrefetchError(null);
+    setUndoRecord(null);
+    setMatchesExhausted(false);
+    prefetchAttempted.current = false;
+    prefetchFailed.current = false;
     const token = window.localStorage.getItem("accessToken");
     if (!token) {
       endSession();
@@ -55,8 +74,10 @@ export default function MatchPage() {
       }
 
       const response = await getMatches(token);
+      seenJobIds.current = new Set(response.matches.map((match) => match.jobId));
       setMatches(response.matches);
       setMissingProfileFields(response.missingProfileFields);
+      setMatchesExhausted(response.matches.length === 0);
       setProfileState("ready");
     } catch (cause: unknown) {
       if (cause instanceof Error && cause.message === "SESSION_EXPIRED") {
@@ -75,19 +96,75 @@ export default function MatchPage() {
     return () => window.clearTimeout(timeoutId);
   }, [loadMatches, reloadKey]);
 
+  const prefetchMatches = useCallback(async () => {
+    if (prefetchInFlight.current || prefetchAttempted.current || matchesExhausted) return;
+
+    const unhandledMatches = matches.slice(0, PREFETCH_THRESHOLD);
+    const token = window.localStorage.getItem("accessToken");
+    if (!token || unhandledMatches.length === 0) return;
+
+    prefetchInFlight.current = true;
+    prefetchAttempted.current = true;
+    setPrefetchError(null);
+    try {
+      const response = await getMatches(
+        token,
+        unhandledMatches.map((match) => match.jobId),
+      );
+      const newMatches = response.matches.filter((match) => !seenJobIds.current.has(match.jobId));
+      newMatches.forEach((match) => seenJobIds.current.add(match.jobId));
+      setMatches((current) => [...current, ...newMatches]);
+      setMissingProfileFields((current) =>
+        mergeMissingProfileFields(current, response.missingProfileFields),
+      );
+      setMatchesExhausted(response.matches.length === 0);
+      if (response.matches.length > 0) prefetchAttempted.current = false;
+    } catch (cause: unknown) {
+      if (cause instanceof Error && cause.message === "SESSION_EXPIRED") {
+        endSession();
+        return;
+      }
+      prefetchAttempted.current = false;
+      prefetchFailed.current = true;
+      setPrefetchError(
+        cause instanceof Error ? cause.message : "Không thể tải thêm việc làm. Vui lòng thử lại.",
+      );
+    } finally {
+      prefetchInFlight.current = false;
+    }
+  }, [endSession, getMatches, matches, matchesExhausted]);
+
+  useEffect(() => {
+    if (
+      matches.length > 0 &&
+      matches.length <= PREFETCH_THRESHOLD &&
+      !prefetchAttempted.current &&
+      !prefetchFailed.current &&
+      !matchesExhausted
+    ) {
+      void prefetchMatches();
+    }
+  }, [matches.length, matchesExhausted, prefetchMatches]);
+
+  const retryPrefetch = useCallback(() => {
+    prefetchFailed.current = false;
+    void prefetchMatches();
+  }, [prefetchMatches]);
+
   const handleDecision = useCallback(
     async (action: MatchAction) => {
       const activeMatch = matches[0];
       const token = window.localStorage.getItem("accessToken");
-      if (!activeMatch || !token || busy || exitDirection || decisionInFlight.current) return;
+      if (!activeMatch || !token || busy || exitDirection || interactionInFlight.current) return;
 
-      decisionInFlight.current = true;
+      interactionInFlight.current = true;
       setBusy(true);
       setError(null);
       let interactionSaved = false;
       try {
         await saveInteraction(token, activeMatch.jobId, action);
         interactionSaved = true;
+        setUndoRecord({ job: activeMatch, action });
         setExitDirection(action);
       } catch (cause: unknown) {
         if (cause instanceof Error && cause.message === "SESSION_EXPIRED") {
@@ -97,7 +174,7 @@ export default function MatchPage() {
         setError(cause instanceof Error ? cause.message : "Không thể lưu lựa chọn. Vui lòng thử lại.");
       } finally {
         setBusy(false);
-        if (!interactionSaved) decisionInFlight.current = false;
+        if (!interactionSaved) interactionInFlight.current = false;
       }
     },
     [busy, endSession, exitDirection, matches, saveInteraction],
@@ -106,8 +183,36 @@ export default function MatchPage() {
   const advanceCard = useCallback(() => {
     setMatches((current) => current.slice(1));
     setExitDirection(null);
-    decisionInFlight.current = false;
+    interactionInFlight.current = false;
   }, []);
+
+  const handleUndo = useCallback(async () => {
+    const token = window.localStorage.getItem("accessToken");
+    if (!undoRecord || !token || busy || exitDirection || interactionInFlight.current) return;
+
+    interactionInFlight.current = true;
+    setBusy(true);
+    setError(null);
+    try {
+      const response = await undoInteraction(token, undoRecord.job.jobId);
+      if (response.jobStillEligible) {
+        setMatches((current) => {
+          if (current.some((match) => match.jobId === undoRecord.job.jobId)) return current;
+          return [undoRecord.job, ...current];
+        });
+      }
+      setUndoRecord(null);
+    } catch (cause: unknown) {
+      if (cause instanceof Error && cause.message === "SESSION_EXPIRED") {
+        endSession();
+        return;
+      }
+      setError(cause instanceof Error ? cause.message : "Không thể hoàn tác lựa chọn. Vui lòng thử lại.");
+    } finally {
+      setBusy(false);
+      interactionInFlight.current = false;
+    }
+  }, [busy, endSession, exitDirection, undoInteraction, undoRecord]);
 
   const handleDetails = useCallback(() => {
     // The details popup is implemented only after its layout review.
@@ -193,6 +298,33 @@ export default function MatchPage() {
         </div>
       )}
 
+      {prefetchError && (
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <span>{prefetchError}</span>
+          <button
+            type="button"
+            onClick={retryPrefetch}
+            className="inline-flex min-h-10 items-center rounded-lg border border-amber-300 px-3 font-semibold hover:bg-amber-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+          >
+            Thử tải thêm
+          </button>
+        </div>
+      )}
+
+      {undoRecord && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#BFDBFE] bg-blue-50 px-4 py-3 text-sm text-[#1E3A8A]">
+          <span>Đã {undoRecord.action === "interest" ? "quan tâm" : "bỏ qua"} công việc gần nhất.</span>
+          <button
+            type="button"
+            disabled={busy || Boolean(exitDirection)}
+            onClick={() => void handleUndo()}
+            className="inline-flex min-h-10 items-center rounded-lg border border-[#93C5FD] px-3 font-semibold hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563EB] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Hoàn tác
+          </button>
+        </div>
+      )}
+
       {activeMatch ? (
         <MatchCard
           key={activeMatch.jobId}
@@ -208,8 +340,23 @@ export default function MatchPage() {
         <section className="grid min-h-72 place-items-center rounded-2xl border border-dashed border-[#CBD5E1] bg-white px-6 py-12 text-center">
           <div className="max-w-sm">
             <BriefcaseBusiness className="mx-auto text-[#2563EB]" size={34} aria-hidden="true" />
-            <h2 className="mt-4 text-lg font-bold text-[#0F172A]">Chưa còn gợi ý phù hợp</h2>
-            <p className="mt-2 text-sm text-[#64748B]">Hãy quay lại sau khi có thêm việc làm mới.</p>
+            <h2 className="mt-4 text-lg font-bold text-[#0F172A]">
+              {matchesExhausted ? "Bạn đã xem hết gợi ý" : "Đang tìm thêm gợi ý"}
+            </h2>
+            <p className="mt-2 text-sm text-[#64748B]">
+              {matchesExhausted
+                ? "Hãy quay lại sau khi có thêm việc làm mới."
+                : "Thử tải thêm để tiếp tục khám phá các công việc phù hợp."}
+            </p>
+            {!matchesExhausted && prefetchError && (
+              <button
+                type="button"
+                onClick={retryPrefetch}
+                className="mt-5 inline-flex min-h-10 items-center rounded-lg border border-[#CBD5E1] px-3 text-sm font-semibold text-[#475569] hover:bg-[#F8FAFC] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563EB]"
+              >
+                Thử tải thêm
+              </button>
+            )}
           </div>
         </section>
       )}
