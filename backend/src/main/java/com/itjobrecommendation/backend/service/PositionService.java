@@ -6,7 +6,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.itjobrecommendation.backend.dto.OptionViewDTO;
-import com.itjobrecommendation.backend.entity.Position;
 import com.itjobrecommendation.backend.repository.PositionRepository;
 
 import lombok.RequiredArgsConstructor;
