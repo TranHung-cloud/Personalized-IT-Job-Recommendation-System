@@ -8,40 +8,15 @@ import type {
   ProfileView,
   QualificationOption,
 } from "@/type/profile";
+import { authenticatedRequest } from "@/lib/authenticatedRequest";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080").replace(/\/$/, "");
 
-async function authenticatedRequest<T>(path: string, token: string, init?: RequestInit): Promise<T> {
-  let response: Response;
-  try {
-    response = await fetch(`${API_URL}${path}`, {
-      ...init,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        ...(init?.headers ?? {}),
-      },
-    });
-  } catch {
-    throw new Error("Không thể kết nối máy chủ. Vui lòng thử lại sau.");
-  }
-
-  if (!response.ok) {
-    if (response.status === 401) throw new Error("SESSION_EXPIRED");
-    let message = "Không thể tải hồ sơ. Vui lòng thử lại.";
-    try {
-      const body = (await response.json()) as { detail?: string; message?: string; title?: string };
-      message = body.detail ?? body.message ?? body.title ?? message;
-    } catch {
-      // Use the fallback when the response has no JSON body.
-    }
-    throw new Error(message);
-  }
-
-  if (response.status === 204 || response.status === 202) return undefined as T;
-  if (response.headers.get("content-type")?.includes("application/json")) {
-    return (await response.json()) as T;
-  }
-  return undefined as T;
+function profileRequest<T>(path: string, token: string, init?: RequestInit) {
+  return authenticatedRequest<T>(path, token, {
+    ...init,
+    fallbackMessage: "Không thể tải hồ sơ. Vui lòng thử lại.",
+  });
 }
 
 function profileToFormData(profile: ProfileOnboardingRequest) {
@@ -98,12 +73,12 @@ export function useProfile() {
   }, []);
 
   const hasProfile = useCallback(
-    (token: string) => run(() => authenticatedRequest<boolean>("/api/profiles/exists", token)),
+    (token: string) => run(() => profileRequest<boolean>("/api/profiles/exists", token)),
     [run],
   );
 
   const getProfile = useCallback(
-    (token: string) => run(() => authenticatedRequest<ProfileView>("/api/profiles", token)),
+    (token: string) => run(() => profileRequest<ProfileView>("/api/profiles", token)),
     [run],
   );
 
@@ -125,11 +100,11 @@ export function useProfile() {
     (token: string) =>
       run(async (): Promise<ProfileOnboardingOptions> => {
         const [skills, positions, locations, workModes, qualifications] = await Promise.all([
-          authenticatedRequest<ProfileOption[]>("/api/skills", token),
-          authenticatedRequest<ProfileOption[]>("/api/positions", token),
-          authenticatedRequest<ProfileOption[]>("/api/locations", token),
-          authenticatedRequest<ProfileOption[]>("/api/work-modes", token),
-          authenticatedRequest<QualificationOption[]>("/api/qualifications", token),
+          profileRequest<ProfileOption[]>("/api/skills", token),
+          profileRequest<ProfileOption[]>("/api/positions", token),
+          profileRequest<ProfileOption[]>("/api/locations", token),
+          profileRequest<ProfileOption[]>("/api/work-modes", token),
+          profileRequest<QualificationOption[]>("/api/qualifications", token),
         ]);
         return { skills, positions, locations, workModes, qualifications };
       }),
@@ -139,7 +114,7 @@ export function useProfile() {
   const createProfile = useCallback(
     (token: string, profile: ProfileOnboardingRequest) =>
       run(async () => {
-        await authenticatedRequest<void>("/api/profiles", token, {
+        await profileRequest<void>("/api/profiles", token, {
           method: "POST",
           body: profileToFormData(profile),
         });
@@ -150,7 +125,7 @@ export function useProfile() {
   const updateProfile = useCallback(
     (token: string, profile: ProfileOnboardingRequest) =>
       run(async () => {
-        await authenticatedRequest<void>("/api/profiles", token, {
+        await profileRequest<void>("/api/profiles", token, {
           method: "PUT",
           body: profileToFormData(profile),
         });
