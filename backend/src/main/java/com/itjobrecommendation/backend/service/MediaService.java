@@ -77,12 +77,9 @@ public class MediaService {
             throw new IllegalArgumentException("Key không được để trống");
         }
 
-        String objectKey = key.startsWith("raw-job-descriptions/")
-                ? key
-                : "raw-job-descriptions/" + key;
         GetObjectRequest request = GetObjectRequest.builder()
                 .bucket(bucket)
-                .key(objectKey)
+                .key(key)
                 .build();
 
         try {
@@ -116,7 +113,8 @@ public class MediaService {
         }
     }
 
-    public record StoredImage(byte[] bytes, String contentType) {}
+    public record StoredImage(byte[] bytes, String contentType) {
+    }
 
     public static class MediaStorageException extends RuntimeException {
         public MediaStorageException(String message, Throwable cause) {
