@@ -14,6 +14,12 @@ import com.itjobrecommendation.backend.entity.id.UserInteractionId;
 
 public interface UserInteractionRepository extends JpaRepository<UserInteraction, UserInteractionId> {
 
+    @Query("select ui.job.id, ui.action, count(ui) " +
+            "from UserInteraction ui " +
+            "where ui.job.id in :jobIds " +
+            "group by ui.job.id, ui.action")
+    List<Object[]> countByJobIdsGroupedByAction(@Param("jobIds") Collection<UUID> jobIds);
+
     @Query("select ui.id.jobId from UserInteraction ui where ui.id.accountId = :accountId")
     Set<UUID> findJobIdsByAccountId(@Param("accountId") UUID accountId);
 

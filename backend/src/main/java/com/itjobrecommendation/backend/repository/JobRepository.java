@@ -4,13 +4,21 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.Query;
 
 import com.itjobrecommendation.backend.entity.Job;
 
-public interface JobRepository extends JpaRepository<Job, UUID> {
+public interface JobRepository extends JpaRepository<Job, UUID>, JpaSpecificationExecutor<Job> {
+      @Override
+      @EntityGraph(attributePaths = { "company", "source", "source.site", "position", "workMode", "qualification" })
+      Page<Job> findAll(Specification<Job> specification, Pageable pageable);
+
       @EntityGraph(attributePaths = { "company", "position", "workMode", "qualification" })
       @Query("""
                   select j
