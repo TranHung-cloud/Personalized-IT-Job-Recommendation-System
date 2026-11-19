@@ -36,7 +36,10 @@ import com.itjobrecommendation.backend.entity.PrefersWorkMode;
 import com.itjobrecommendation.backend.entity.Profile;
 import com.itjobrecommendation.backend.entity.TargetsLocation;
 import com.itjobrecommendation.backend.entity.TargetsPosition;
+import com.itjobrecommendation.backend.entity.UserInteraction;
 import com.itjobrecommendation.backend.entity.WorkExperience;
+import com.itjobrecommendation.backend.entity.enums.UserInteractionAction;
+import com.itjobrecommendation.backend.entity.id.UserInteractionId;
 import com.itjobrecommendation.backend.repository.DegreeRepository;
 import com.itjobrecommendation.backend.repository.JobLocationRepository;
 import com.itjobrecommendation.backend.repository.JobRepository;
@@ -121,10 +124,7 @@ public class MatchService {
                         "Bạn cần tạo hồ sơ trước khi xem gợi ý công việc"));
 
         MatchProfile matchProfile = loadProfileData(profile);
-        LocalDate tomorrowInVietnam = LocalDate.now(clock.withZone(VIETNAM_ZONE)).plusDays(1);
-        OffsetDateTime expirationBoundary = tomorrowInVietnam.atStartOfDay(VIETNAM_ZONE).toOffsetDateTime();
-
-        List<Job> candidateJobs = jobRepository.findEligibleJobsByExpirationBoundary(expirationBoundary);
+        List<Job> candidateJobs = jobRepository.findEligibleJobsByExpirationBoundary(expirationBoundary());
         if (candidateJobs.isEmpty()) {
             return new MatchResponseDTO(List.of(), matchProfile.missingFields());
         }
@@ -166,6 +166,47 @@ public class MatchService {
                 .map(this::toView)
                 .toList();
         return new MatchResponseDTO(matches, matchProfile.missingFields());
+    }
+
+    @Transactional
+    public void saveInteraction(Account account, UUID jobId, UserInteractionAction action) {
+        if (action == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "action là bắt buộc");
+        }
+
+        Job job = findJob(jobId);
+        UserInteractionId interactionId = new UserInteractionId(account.getId(), jobId);
+        UserInteraction interaction = userInteractionRepository.findById(interactionId)
+                .orElseGet(() -> {
+                    UserInteraction newInteraction = new UserInteraction();
+                    newInteraction.setId(interactionId);
+                    newInteraction.setAccount(account);
+                    newInteraction.setJob(job);
+                    newInteraction.setCreatedAt(OffsetDateTime.now(clock));
+                    return newInteraction;
+                });
+        interaction.setAction(action);
+        userInteractionRepository.saveAndFlush(interaction);
+    }
+
+    @Transactional
+    public boolean undoInteraction(Account account, UUID jobId) {
+        Job job = findJob(jobId);
+        UserInteractionId interactionId = new UserInteractionId(account.getId(), jobId);
+        userInteractionRepository.findById(interactionId).ifPresent(userInteractionRepository::delete);
+        userInteractionRepository.flush();
+        return job.getExpiredAt() != null && !job.getExpiredAt().isBefore(expirationBoundary());
+    }
+
+    private Job findJob(UUID jobId) {
+        return jobRepository.findById(jobId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Không tìm thấy công việc"));
+    }
+
+    private OffsetDateTime expirationBoundary() {
+        LocalDate tomorrowInVietnam = LocalDate.now(clock.withZone(VIETNAM_ZONE)).plusDays(1);
+        return tomorrowInVietnam.atStartOfDay(VIETNAM_ZONE).toOffsetDateTime();
     }
 
     private MatchProfile loadProfileData(Profile profile) {
