@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BriefcaseBusiness, RotateCcw, UserRound } from "lucide-react";
 import { MatchCard } from "@/components/match/MatchCard";
 import { useMatch } from "@/hook/useMatch";
@@ -27,6 +27,7 @@ export default function MatchPage() {
   const [exitDirection, setExitDirection] = useState<MatchAction | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const decisionInFlight = useRef(false);
   const popupOpen = false;
 
   const endSession = useCallback(() => {
@@ -78,12 +79,15 @@ export default function MatchPage() {
     async (action: MatchAction) => {
       const activeMatch = matches[0];
       const token = window.localStorage.getItem("accessToken");
-      if (!activeMatch || !token || busy || exitDirection) return;
+      if (!activeMatch || !token || busy || exitDirection || decisionInFlight.current) return;
 
+      decisionInFlight.current = true;
       setBusy(true);
       setError(null);
+      let interactionSaved = false;
       try {
         await saveInteraction(token, activeMatch.jobId, action);
+        interactionSaved = true;
         setExitDirection(action);
       } catch (cause: unknown) {
         if (cause instanceof Error && cause.message === "SESSION_EXPIRED") {
@@ -93,6 +97,7 @@ export default function MatchPage() {
         setError(cause instanceof Error ? cause.message : "Không thể lưu lựa chọn. Vui lòng thử lại.");
       } finally {
         setBusy(false);
+        if (!interactionSaved) decisionInFlight.current = false;
       }
     },
     [busy, endSession, exitDirection, matches, saveInteraction],
@@ -101,6 +106,7 @@ export default function MatchPage() {
   const advanceCard = useCallback(() => {
     setMatches((current) => current.slice(1));
     setExitDirection(null);
+    decisionInFlight.current = false;
   }, []);
 
   const handleDetails = useCallback(() => {

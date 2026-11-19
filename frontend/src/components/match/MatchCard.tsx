@@ -92,6 +92,12 @@ export function MatchCard({
 
   function handlePointerDown(event: React.PointerEvent<HTMLElement>) {
     if (busy || exitDirection || event.pointerType === "mouse") return;
+    if (
+      event.target instanceof Element &&
+      event.target.closest("button, a, input, select, textarea, [contenteditable='true']")
+    ) {
+      return;
+    }
     pointerStart.current = event.clientX;
     event.currentTarget.setPointerCapture(event.pointerId);
   }
