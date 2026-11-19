@@ -8,11 +8,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.itjobrecommendation.backend.dto.JobAdminViewDTO;
+import com.itjobrecommendation.backend.dto.JobDetailAdminViewDTO;
 import com.itjobrecommendation.backend.dto.JobDetailViewDTO;
 import com.itjobrecommendation.backend.service.JobService;
 
@@ -35,6 +37,11 @@ public class JobController {
         return jobService.getUserPage(pageable, search, locationIds, skillIds, positionIds, workModeIds);
     }
 
+    @GetMapping("/jobs/{jobId}")
+    public JobDetailViewDTO getJobDetail(@PathVariable UUID jobId) {
+        return jobService.getView(jobId);
+    }
+
     @GetMapping("/admin/jobs/page")
     public Page<JobAdminViewDTO> getAdminJobs(
             @PageableDefault(size = 20, sort = "postedAt", direction = Sort.Direction.DESC) Pageable pageable,
@@ -42,4 +49,10 @@ public class JobController {
             @RequestParam(required = false) UUID siteId) {
         return jobService.getAdminPage(pageable, search, siteId);
     }
+
+    @GetMapping("/admin/jobs/{jobId}")
+    public JobDetailAdminViewDTO getAdminJobDetail(@PathVariable UUID jobId) {
+        return jobService.getAdminView(jobId);
+    }
+
 }
