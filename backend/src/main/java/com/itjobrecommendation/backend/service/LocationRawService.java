@@ -21,10 +21,12 @@ import com.itjobrecommendation.backend.entity.JobLocation;
 import com.itjobrecommendation.backend.entity.Location;
 import com.itjobrecommendation.backend.entity.LocationRaw;
 import com.itjobrecommendation.backend.entity.Source;
+import com.itjobrecommendation.backend.entity.SourceLocationRaw;
 import com.itjobrecommendation.backend.entity.enums.RawValueStatus;
 import com.itjobrecommendation.backend.entity.id.JobLocationId;
 import com.itjobrecommendation.backend.repository.JobRepository;
 import com.itjobrecommendation.backend.repository.LocationRawRepository;
+import com.itjobrecommendation.backend.repository.LocationRepository;
 import com.itjobrecommendation.backend.repository.SourceLocationRawRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -36,6 +38,7 @@ public class LocationRawService {
     private final LocationRawRepository locationRawRepository;
     private final SourceLocationRawRepository sourceLocationRawRepository;
     private final JobRepository jobRepository;
+    private final LocationRepository locationRepository;
 
     @Transactional(readOnly = true)
     public Page<LocationRawViewDTO> getLocationRaws(UUID locationId, RawValueStatus status, String rawName,
@@ -79,7 +82,8 @@ public class LocationRawService {
     private void matchLocationRawToCanonical(UUID locationId, String rawName) {
         LocationRaw locationRaw = locationRawRepository.findById(rawName)
                 .orElseThrow(() -> new IllegalArgumentException("Địa điểm chưa chuẩn hóa không tồn tại"));
-        Location location = locationRaw.getCanonical();
+        Location location = locationRepository.findById(locationId)
+                .orElseThrow(() -> new IllegalArgumentException("Địa điểm chuẩn hóa không tồn tại"));
         if (location == null || !location.getId().equals(locationId)) {
             throw new IllegalArgumentException(
                     "Địa điểm chuẩn hóa không tồn tại hoặc không khớp với giá trị chưa chuẩn hóa");
@@ -89,7 +93,9 @@ public class LocationRawService {
                 : null;
         locationRaw.setCanonical(location);
         locationRaw.setStatus(RawValueStatus.mapped);
-        List<Source> sources = sourceLocationRawRepository.findSourceByLocationRawRawName(locationRaw.getRawName());
+        List<SourceLocationRaw> sourceLocationRaws = sourceLocationRawRepository
+                .findSourceByLocationRawRawName(locationRaw.getRawName());
+        List<Source> sources = sourceLocationRaws.stream().map(SourceLocationRaw::getSource).toList();
         if (sources == null || sources.isEmpty())
             return;
         List<Job> jobs = jobRepository.findBySourceIn(sources);
