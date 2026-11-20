@@ -9,6 +9,6 @@ import com.itjobrecommendation.backend.entity.SourceLocationRaw;
 import com.itjobrecommendation.backend.entity.id.SourceLocationRawId;
 
 public interface SourceLocationRawRepository extends JpaRepository<SourceLocationRaw, SourceLocationRawId> {
-    List<Source> getSourcesByLocationRawName(String locationRawName);
+    List<Source> findSourceByLocationRawRawName(String locationRawName);
 
 }

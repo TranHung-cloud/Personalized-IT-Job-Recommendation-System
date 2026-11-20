@@ -82,7 +82,7 @@ public class SkillRawService {
                 : null;
         skillRaw.setCanonical(skill);
         skillRaw.setStatus(RawValueStatus.mapped);
-        List<Source> sources = sourceSkillRawRepository.getSourcesBySkillRawName(skillRaw.getRawName());
+        List<Source> sources = sourceSkillRawRepository.findSourceBySkillRawRawName(skillRaw.getRawName());
         if (sources == null || sources.isEmpty())
             return;
         List<Job> jobs = jobRepository.findBySourceIn(sources);

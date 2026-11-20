@@ -81,7 +81,7 @@ public class LocationRawService {
                 : null;
         locationRaw.setCanonical(location);
         locationRaw.setStatus(RawValueStatus.mapped);
-        List<Source> sources = sourceLocationRawRepository.getSourcesByLocationRawName(locationRaw.getRawName());
+        List<Source> sources = sourceLocationRawRepository.findSourceByLocationRawRawName(locationRaw.getRawName());
         if (sources == null || sources.isEmpty())
             return;
         List<Job> jobs = jobRepository.findBySourceIn(sources);

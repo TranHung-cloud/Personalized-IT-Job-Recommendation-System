@@ -9,6 +9,6 @@ import com.itjobrecommendation.backend.entity.SourceSkillRaw;
 import com.itjobrecommendation.backend.entity.id.SourceSkillRawId;
 
 public interface SourceSkillRawRepository extends JpaRepository<SourceSkillRaw, SourceSkillRawId> {
-    List<Source> getSourcesBySkillRawName(String skillRawName);
+    List<Source> findSourceBySkillRawRawName(String rawName);
 
 }
