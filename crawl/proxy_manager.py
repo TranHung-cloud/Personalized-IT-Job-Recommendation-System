@@ -12,46 +12,111 @@ from crawl.config import (
 
 
 def get_vietnam_proxies():
-    url = "https://api.proxyscrape.com/v4/free-proxy-list/get"
+    urls = [
+        {
+            "name": "ProxyScrape",
+            "url": "https://api.proxyscrape.com/v4/free-proxy-list/get",
+            "params": {
+                "protocol": "http,https",
+                "timeout": "3000",
+                "country": "VN",
+                "ssl": "all",
+                "anonymity": "all",
+                "limit": "20",
+                "request": "displayproxies",
+            },
+            "limit": 20,
+        },
+        {
+            "name": "Monosans",
+            "url": "https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/http.txt",
+            "params": {},
+            "limit": 10,
+        },
+        {
+            "name": "TheSpeedX",
+            "url": "https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt",
+            "params": {},
+            "limit": 10,
+        },
+        {
+            "name": "GeoNode",
+            "url": "https://proxylist.geonode.com/api/proxy-list",
+            "params": {
+                "limit": 20,
+                "page": 1,
+                "sort_by": "lastChecked",
+                "sort_type": "desc",
+                "protocols": "http,https",
+                "country": "VN",
+            },
+            "limit": 20,
+        },
+    ]
 
-    params = {
-        "protocol":"http,https",
-        "timeout":"3000",
-        "country":"VN",
-        "ssl":"all",
-        "anonymity":"elite",
-        "limit":"2000",
-        "request":"displayproxies",
-    }
+    proxies = []
+    seen = set()
 
-    try:
-        response = requests.get(url, params=params, timeout=(5, 20))
-        response.raise_for_status()
+    for source in urls:
+        try:
+            print(f"[PROXY] Đang lấy từ {source['name']}...")
 
-        proxies = []
+            response = requests.get(
+                source["url"],
+                params=source["params"],
+                timeout=(3, 10)
+            )
+            response.raise_for_status()
 
-        for line in response.text.splitlines():
-            line = line.strip()
+            if source["name"] == "GeoNode":
+                data = response.json()
+                lines = [
+                    f"{item['ip']}:{item['port']}"
+                    for item in data.get("data", [])
+                    if item.get("ip") and item.get("port")
+                ]
+            else:
+                lines = response.text.splitlines()
 
-            if not line or ":" not in line:
-                continue
+            count = 0
+            limit = source["limit"]
 
-            ip, port = line.rsplit(":", 1)
+            for line in lines:
+                line = line.strip()
 
-            try:
-                port = int(port)
-            except ValueError:
-                continue
+                if not line or ":" not in line:
+                    continue
 
-            if ip and 1 <= port <= 65535:
-                proxies.append(f"http://{ip}:{port}")
+                ip, port = line.rsplit(":", 1)
 
-        print(f"[PROXY] Lấy được {len(proxies)} proxy")
-        return proxies
+                try:
+                    port = int(port)
+                except ValueError:
+                    continue
 
-    except requests.RequestException as e:
-        print(f"[PROXY] Lỗi lấy danh sách: {e}")
-        return []
+                if not ip or not 1 <= port <= 65535:
+                    continue
+
+                proxy = f"http://{ip}:{port}"
+
+                if proxy in seen:
+                    continue
+
+                seen.add(proxy)
+                proxies.append(proxy)
+                count += 1
+
+                if count >= limit:
+                    break
+
+            print(f"[PROXY] {source['name']}: {count} proxy")
+
+        except (requests.RequestException, ValueError, KeyError) as e:
+            print(f"[PROXY] {source['name']} lỗi: {e}")
+
+    print(f"[PROXY] Tổng cộng: {len(proxies)} proxy")
+
+    return proxies
 
 def check_proxy(proxy, url_test):
     proxy_url = proxy
