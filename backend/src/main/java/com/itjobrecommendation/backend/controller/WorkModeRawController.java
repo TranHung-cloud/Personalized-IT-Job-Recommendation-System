@@ -32,8 +32,9 @@ public class WorkModeRawController {
     public ResponseEntity<Page<WorkModeRawViewDTO>> getWorkModeRaws(
             @RequestParam(required = false) UUID workModeId,
             @RequestParam(required = false) RawValueStatus status,
+            @RequestParam(required = false) String rawName,
             @PageableDefault(size = 10, sort = "rawCount", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(workModeRawService.getWorkModeRaws(workModeId, status, pageable));
+        return ResponseEntity.ok(workModeRawService.getWorkModeRaws(workModeId, status, rawName, pageable));
     }
 
     @PostMapping("/match")

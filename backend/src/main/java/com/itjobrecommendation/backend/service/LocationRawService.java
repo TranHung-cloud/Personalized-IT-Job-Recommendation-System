@@ -38,7 +38,8 @@ public class LocationRawService {
     private final JobRepository jobRepository;
 
     @Transactional(readOnly = true)
-    public Page<LocationRawViewDTO> getLocationRaws(UUID locationId, RawValueStatus status, Pageable pageable) {
+    public Page<LocationRawViewDTO> getLocationRaws(UUID locationId, RawValueStatus status, String rawName,
+            Pageable pageable) {
         Specification<LocationRaw> spec = (root, query, cb) -> {
             var predicates = cb.conjunction();
             if (locationId != null) {
@@ -46,6 +47,13 @@ public class LocationRawService {
             }
             if (status != null) {
                 predicates = cb.and(predicates, cb.equal(root.get("status"), status));
+            }
+            if (rawName != null && !rawName.trim().isEmpty()) {
+                predicates = cb.and(
+                        predicates,
+                        cb.like(
+                                cb.lower(root.get("rawName")),
+                                "%" + rawName.trim().toLowerCase() + "%"));
             }
             return predicates;
         };

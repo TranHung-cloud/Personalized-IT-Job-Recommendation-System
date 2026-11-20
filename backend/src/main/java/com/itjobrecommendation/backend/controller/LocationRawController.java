@@ -32,8 +32,9 @@ public class LocationRawController {
     public ResponseEntity<Page<LocationRawViewDTO>> getLocationRaws(
             @RequestParam(required = false) UUID locationId,
             @RequestParam(required = false) RawValueStatus status,
+            @RequestParam(required = false) String rawName,
             @PageableDefault(size = 10, sort = "rawCount", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(locationRawService.getLocationRaws(locationId, status, pageable));
+        return ResponseEntity.ok(locationRawService.getLocationRaws(locationId, status, rawName, pageable));
     }
 
     @PostMapping("/match")

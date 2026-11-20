@@ -32,8 +32,9 @@ public class SkillRawController {
     public ResponseEntity<Page<SkillRawViewDTO>> getSkillRaws(
             @RequestParam(required = false) UUID skillId,
             @RequestParam(required = false) RawValueStatus status,
+            @RequestParam(required = false) String rawName,
             @PageableDefault(size = 10, sort = "rawCount", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(skillRawService.getSkillRaws(skillId, status, pageable));
+        return ResponseEntity.ok(skillRawService.getSkillRaws(skillId, status, rawName, pageable));
     }
 
     @PostMapping("/match")
