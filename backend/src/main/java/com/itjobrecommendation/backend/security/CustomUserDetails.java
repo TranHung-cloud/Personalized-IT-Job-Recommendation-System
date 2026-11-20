@@ -29,7 +29,7 @@ public class CustomUserDetails implements UserDetails {
 
         if (account.getRole() != null && account.getRole().getName() != null) {
             String roleName = account.getRole().getName();
-            this.authorities = List.of(new SimpleGrantedAuthority("ROLE_" + roleName));
+            this.authorities = List.of(new SimpleGrantedAuthority("ROLE_" + roleName.toUpperCase()));
         } else {
             this.authorities = Collections.emptyList();
         }
