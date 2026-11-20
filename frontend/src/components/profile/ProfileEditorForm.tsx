@@ -9,6 +9,7 @@ import {
   X,
 } from "lucide-react";
 import { useProfile } from "@/hook/useProfile";
+import { ToastNotice } from "@/components/ui/toast-notice";
 import { DegreeCertificatePreview } from "@/components/profile/DegreeCertificatePreview";
 import type {
   DegreeInput,
@@ -235,12 +236,7 @@ export function ProfileEditorForm({ mode, profile, onCancel, onSaved }: Props) {
 
       <section className="space-y-5 rounded-2xl border border-[#E2E8F0] bg-white p-5 sm:p-6">
         {activeError && (
-          <p
-            role="alert"
-            className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-3 text-sm text-red-800"
-          >
-            {activeError}
-          </p>
+          <ToastNotice kind="error" message={activeError} />
         )}
         {optionsLoading && (
           <p role="status" className="text-sm text-[#64748B]">

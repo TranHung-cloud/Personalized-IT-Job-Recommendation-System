@@ -15,6 +15,7 @@ import { useProfile } from "@/hook/useProfile";
 import type { ProfileOption, ProfileView } from "@/type/profile";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { DegreeCertificatePreview } from "@/components/profile/DegreeCertificatePreview";
+import { ToastNotice } from "@/components/ui/toast-notice";
 
 type FormMode = "create" | "edit" | null;
 
@@ -135,19 +136,7 @@ export default function ProfilePage() {
 
   if (loadError) {
     return (
-      <div
-        role="alert"
-        className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-800"
-      >
-        <p>{loadError}</p>
-        <button
-          type="button"
-          onClick={() => setReloadKey((current) => current + 1)}
-          className="mt-3 min-h-10 rounded-lg border border-red-300 px-3 font-semibold hover:bg-red-100"
-        >
-          Thử tải lại
-        </button>
-      </div>
+      <ToastNotice kind="error" message={loadError} actionLabel="Thử tải lại" onAction={() => setReloadKey((current) => current + 1)} />
     );
   }
 

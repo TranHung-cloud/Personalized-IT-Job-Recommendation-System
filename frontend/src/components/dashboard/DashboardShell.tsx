@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ProfileOnboardingModal } from "@/components/profile/ProfileOnboardingModal";
+import { ToastNotice } from "@/components/ui/toast-notice";
 import { useProfile } from "@/hook/useProfile";
 import {
   ArrowLeftRight,
@@ -256,19 +257,7 @@ export function DashboardShell({
           className="min-h-[calc(100vh-4rem)] p-4 sm:p-6 lg:p-8"
         >
           {variant === "user" && profileCheckError && (
-            <div
-              role="alert"
-              className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
-            >
-              <span>{profileCheckError}</span>
-              <button
-                type="button"
-                onClick={() => window.location.reload()}
-                className="min-h-10 rounded-lg px-3 font-semibold underline underline-offset-2"
-              >
-                Thử lại
-              </button>
-            </div>
+            <ToastNotice kind="warning" message={profileCheckError} actionLabel="Thử lại" onAction={() => window.location.reload()} />
           )}
           {children}
         </main>

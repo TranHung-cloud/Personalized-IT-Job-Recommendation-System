@@ -1,18 +1,20 @@
 "use client";
 
-import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { SubmitEvent } from "react";
 import {
   ArrowLeft,
   ArrowRight,
   BriefcaseBusiness,
-  ChevronDown,
   GraduationCap,
   Plus,
   X,
 } from "lucide-react";
 import { useCompanies } from "@/hook/useCompanies";
 import { useProfile } from "@/hook/useProfile";
+import { ToastNotice } from "@/components/ui/toast-notice";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { useDropdownPlacement } from "@/hook/useDropdownPlacement";
 import type {
   DegreeInput,
   ProfileOnboardingOptions,
@@ -35,63 +37,6 @@ const EMPTY_OPTIONS: ProfileOnboardingOptions = {
   workModes: [],
   qualifications: [],
 };
-
-function useDropdownPlacement(
-  isOpen: boolean,
-  anchorRef: { current: HTMLElement | null },
-  contentCount: number,
-) {
-  const [placement, setPlacement] = useState<"above" | "below">("below");
-  const [maxHeight, setMaxHeight] = useState(160);
-
-  useLayoutEffect(() => {
-    if (!isOpen) return;
-
-    const anchor = anchorRef.current;
-    if (!anchor) return;
-    const trigger = anchor;
-
-    let scrollContainer: HTMLElement | null = anchor.parentElement;
-    while (scrollContainer) {
-      const { overflowY } = window.getComputedStyle(scrollContainer);
-      if (
-        (overflowY === "auto" || overflowY === "scroll") &&
-        scrollContainer.scrollHeight > scrollContainer.clientHeight
-      )
-        break;
-      scrollContainer = scrollContainer.parentElement;
-    }
-
-    function updatePlacement() {
-      const anchorRect = trigger.getBoundingClientRect();
-      const containerRect = scrollContainer?.getBoundingClientRect();
-      const topEdge = containerRect
-        ? containerRect.top + scrollContainer!.clientTop
-        : 0;
-      const bottomEdge = containerRect
-        ? topEdge + scrollContainer!.clientHeight
-        : window.innerHeight;
-      const roomAbove = Math.max(0, anchorRect.top - topEdge - 8);
-      const roomBelow = Math.max(0, bottomEdge - anchorRect.bottom - 8);
-      const shouldFlipAbove = roomBelow < 160 && roomAbove > roomBelow;
-
-      setPlacement(shouldFlipAbove ? "above" : "below");
-      setMaxHeight(
-        Math.max(40, Math.min(160, shouldFlipAbove ? roomAbove : roomBelow)),
-      );
-    }
-
-    updatePlacement();
-    window.addEventListener("resize", updatePlacement);
-    scrollContainer?.addEventListener("scroll", updatePlacement);
-    return () => {
-      window.removeEventListener("resize", updatePlacement);
-      scrollContainer?.removeEventListener("scroll", updatePlacement);
-    };
-  }, [anchorRef, contentCount, isOpen]);
-
-  return { placement, maxHeight };
-}
 
 export function OptionPicker({
   label,
@@ -250,146 +195,19 @@ export function PositionPicker({
   onChange: (id: string) => void;
   hasError: boolean;
 }) {
-  const inputId = useId();
-  const listId = useId();
-  const errorId = useId();
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
-  const [query, setQuery] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
-  const matchingOptions = options.filter((option) =>
-    option.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()),
-  );
-  const selectedOption = options.find((option) => option.id === selectedId);
-  const { placement, maxHeight } = useDropdownPlacement(
-    isOpen,
-    triggerRef,
-    matchingOptions.length,
-  );
-
-  useEffect(() => {
-    if (isOpen) searchRef.current?.focus();
-  }, [isOpen]);
-
   return (
-    <div className={labelClass}>
-      <span id={`${inputId}-label`}>Vị trí</span>
-      <div
-        className="relative mt-1.5"
-        onBlur={(event) => {
-          if (!event.currentTarget.contains(event.relatedTarget))
-            setIsOpen(false);
-        }}
-      >
-        <button
-          ref={triggerRef}
-          id={inputId}
-          type="button"
-          role="combobox"
-          aria-labelledby={`${inputId}-label ${inputId}-value`}
-          aria-haspopup="listbox"
-          aria-expanded={isOpen}
-          aria-controls={listId}
-          aria-required="true"
-          aria-invalid={hasError}
-          aria-describedby={hasError ? errorId : undefined}
-          onClick={() => setIsOpen((open) => !open)}
-          onKeyDown={(event) => {
-            if (event.key === "Escape") setIsOpen(false);
-            if (event.key === "ArrowDown") setIsOpen(true);
-          }}
-          className={`flex h-11 w-full min-w-0 items-center justify-between gap-2 rounded-lg border bg-white px-3 text-left text-sm outline-none transition focus:ring-4 ${hasError ? "border-red-500 focus:border-red-500 focus:ring-red-100" : "border-[#CBD5E1] focus:border-[#2563EB] focus:ring-blue-100"}`}
-        >
-          <span
-            id={`${inputId}-value`}
-            title={selectedOption?.name}
-            className={`min-w-0 flex-1 truncate ${selectedOption ? "text-[#0F172A]" : "text-[#64748B]"}`}
-          >
-            {selectedOption?.name ?? "Chọn vị trí"}
-          </span>
-          <ChevronDown
-            size={16}
-            aria-hidden="true"
-            className="shrink-0 text-[#64748B]"
-          />
-        </button>
-        {isOpen && (
-          <div
-            style={{ maxHeight: `${maxHeight}px` }}
-            className={`absolute inset-x-0 z-30 flex min-w-0 flex-col overflow-hidden rounded-xl border border-[#CBD5E1] bg-white p-1.5 shadow-lg ${placement === "above" ? "bottom-full mb-1" : "top-full mt-1"}`}
-          >
-            <input
-              ref={searchRef}
-              type="search"
-              aria-label="Tìm vị trí"
-              aria-controls={listId}
-              autoComplete="off"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Escape") {
-                  setIsOpen(false);
-                  triggerRef.current?.focus();
-                }
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  if (matchingOptions[0]) {
-                    onChange(matchingOptions[0].id);
-                    setQuery("");
-                    setIsOpen(false);
-                    triggerRef.current?.focus();
-                  }
-                }
-              }}
-              placeholder="Tìm vị trí…"
-              className="mb-1.5 h-10 w-full min-w-0 shrink-0 rounded-lg border border-[#E2E8F0] px-3 text-sm outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100"
-            />
-            <ul
-              id={listId}
-              role="listbox"
-              aria-label="Vị trí"
-              className="min-h-0 overflow-y-auto"
-            >
-              {matchingOptions.length > 0 ? (
-                matchingOptions.map((option) => (
-                  <li key={option.id} role="presentation">
-                    <button
-                      type="button"
-                      role="option"
-                      aria-selected={option.id === selectedId}
-                      title={option.name}
-                      onMouseDown={(event) => event.preventDefault()}
-                      onClick={() => {
-                        onChange(option.id);
-                        setQuery("");
-                        setIsOpen(false);
-                        triggerRef.current?.focus();
-                      }}
-                      className="block min-h-10 w-full min-w-0 overflow-hidden text-ellipsis whitespace-nowrap rounded-lg px-3 text-left text-sm text-[#334155] hover:bg-blue-50 hover:text-[#1D4ED8] focus-visible:bg-blue-50 focus-visible:outline-none"
-                    >
-                      {option.name}
-                    </button>
-                  </li>
-                ))
-              ) : (
-                <li className="px-3 py-2 text-sm text-[#64748B]">
-                  Không tìm thấy vị trí phù hợp.
-                </li>
-              )}
-            </ul>
-          </div>
-        )}
-      </div>
-      {hasError && (
-        <p
-          id={errorId}
-          role="alert"
-          className="mt-1 text-xs font-normal text-red-600"
-        >
-          Vui lòng chọn vị trí.
-        </p>
-      )}
-    </div>
+    <SearchableSelect
+      label="Vị trí"
+      options={options}
+      selectedId={selectedId}
+      onChange={onChange}
+      placeholder="Chọn vị trí"
+      searchPlaceholder="Tìm vị trí…"
+      emptyMessage="Không tìm thấy vị trí phù hợp."
+      hasError={hasError}
+      errorMessage="Vui lòng chọn vị trí."
+      required
+    />
   );
 }
 
@@ -710,14 +528,7 @@ export function ProfileOnboardingModal({ onSkip, onCompleted }: Props) {
         </header>
 
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-8 sm:py-6">
-          {activeError && (
-            <p
-              role="alert"
-              className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-3 text-sm text-red-800"
-            >
-              {activeError}
-            </p>
-          )}
+          {activeError && <ToastNotice kind="error" message={activeError} />}
           {optionsLoading && (
             <p role="status" className="text-sm text-[#64748B]">
               Đang tải danh sách lựa chọn…
