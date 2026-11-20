@@ -1,0 +1,49 @@
+name: Test Crawl Job
+
+on:
+  workflow_dispatch:
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install -r crawl/requirements.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Install Google Chrome
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+
+      - name: Install Xvfb
+        run: |
+          sudo apt-get install -y xvfb
+
+      - name: Run crawl script
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+          PYTHONUNBUFFERED: "1"
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          STORAGE_BUCKET: ${{ secrets.STORAGE_BUCKET }}
+          AWS_ENDPOINT_URL_S3: ${{ secrets.AWS_ENDPOINT_URL_S3 }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          set -o pipefail
+          mkdir -p log
+          xvfb-run -a \
+          --server-args="-screen 0 1366x768x24" \
+          python -u -m crawl.crawl_job \
+          2>&1 | tee log/app.log
