@@ -181,9 +181,9 @@ def get_working_proxy_forever(url):
             if not proxies:
                 print(
                     "[PROXY] Không có proxy khả dụng. "
-                    "Thử lại sau 5 phút."
+                    "Thử lại sau 2 phút."
                 )
-                time.sleep(300)
+                time.sleep(120)
                 continue
 
             proxy = select_working_proxy(proxies, url)
@@ -191,9 +191,9 @@ def get_working_proxy_forever(url):
             if not proxy:
                 print(
                     "[PROXY] Không tìm được proxy hoạt động. "
-                    "Thử lại sau 5 phút."
+                    "Thử lại sau 2 phút."
                 )
-                time.sleep(300)
+                time.sleep(120)
                 continue
 
             print(f"[PROXY] Đã chọn: {proxy}")
@@ -201,5 +201,5 @@ def get_working_proxy_forever(url):
 
         except Exception as e:
             print(f"[PROXY] Lỗi lấy hoặc kiểm tra proxy: {e}")
-            print("[PROXY] Thử lại sau 5 phút.")
-            time.sleep(300)
+            print("[PROXY] Thử lại sau 2 phút.")
+            time.sleep(120)
