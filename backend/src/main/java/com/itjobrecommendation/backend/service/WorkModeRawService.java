@@ -22,6 +22,7 @@ import com.itjobrecommendation.backend.entity.enums.RawValueStatus;
 import com.itjobrecommendation.backend.repository.JobRepository;
 import com.itjobrecommendation.backend.repository.SourceRepository;
 import com.itjobrecommendation.backend.repository.WorkModeRawRepository;
+import com.itjobrecommendation.backend.repository.WorkModeRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -31,6 +32,7 @@ public class WorkModeRawService {
     private final WorkModeRawRepository workModeRawRepository;
     private final SourceRepository sourceRepository;
     private final JobRepository jobRepository;
+    private final WorkModeRepository workModeRepository;
 
     @Transactional(readOnly = true)
     public Page<WorkModeRawViewDTO> getWorkModeRaws(UUID workModeId, RawValueStatus status, String rawName,
@@ -74,11 +76,14 @@ public class WorkModeRawService {
     private void matchWorkModeRawToCanonical(UUID workModeId, String rawName) {
         WorkModeRaw workModeRaw = workModeRawRepository.findByRawName(rawName)
                 .orElseThrow(() -> new IllegalArgumentException("Hình thức làm việc chưa chuẩn hóa không tồn tại"));
-        WorkMode canonical = workModeRaw.getCanonical();
+        WorkMode canonical = workModeRepository.findById(workModeId)
+                .orElseThrow(() -> new IllegalArgumentException("Hình thức làm việc chuẩn hóa không tồn tại"));
+        System.out.println("Canonical: " + canonical);
         if (canonical == null || !canonical.getId().equals(workModeId)) {
             throw new IllegalArgumentException(
                     "Hình thức làm việc chuẩn hóa không tồn tại hoặc không khớp với giá trị chưa chuẩn hóa");
         }
+        workModeRaw.setCanonical(canonical);
         workModeRaw.setStatus(RawValueStatus.mapped);
         List<Source> sources = sourceRepository.findByWorkModeRaw(workModeRaw);
         if (sources == null || sources.isEmpty())
@@ -86,7 +91,6 @@ public class WorkModeRawService {
         List<Job> jobs = jobRepository.findBySourceIn(sources);
         jobs.forEach(job -> job.setWorkMode(canonical));
         jobRepository.saveAll(jobs);
-        workModeRawRepository.save(workModeRaw);
     }
 
     @Transactional
