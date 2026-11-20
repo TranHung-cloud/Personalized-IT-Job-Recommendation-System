@@ -22,6 +22,7 @@ import com.itjobrecommendation.backend.entity.JobSkill;
 import com.itjobrecommendation.backend.entity.Skill;
 import com.itjobrecommendation.backend.entity.SkillRaw;
 import com.itjobrecommendation.backend.entity.Source;
+import com.itjobrecommendation.backend.entity.SourceSkillRaw;
 import com.itjobrecommendation.backend.entity.enums.RawValueStatus;
 import com.itjobrecommendation.backend.entity.id.JobSkillId;
 import com.itjobrecommendation.backend.repository.JobRepository;
@@ -89,7 +90,9 @@ public class SkillRawService {
                 : null;
         skillRaw.setCanonical(skill);
         skillRaw.setStatus(RawValueStatus.mapped);
-        List<Source> sources = sourceSkillRawRepository.findSourceBySkillRawRawName(skillRaw.getRawName());
+        List<SourceSkillRaw> sourceSkillRaws = sourceSkillRawRepository
+                .findSourceBySkillRawRawName(skillRaw.getRawName());
+        List<Source> sources = sourceSkillRaws.stream().map(SourceSkillRaw::getSource).toList();
         if (sources == null || sources.isEmpty())
             return;
         List<Job> jobs = jobRepository.findBySourceIn(sources);
