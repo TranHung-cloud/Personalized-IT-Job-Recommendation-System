@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { BriefcaseBusiness, UserRound } from "lucide-react";
+import { BriefcaseBusiness, RotateCcw, UserRound } from "lucide-react";
 import { MatchCard } from "@/components/match/MatchCard";
 import { useMatch } from "@/hook/useMatch";
 import { useProfile } from "@/hook/useProfile";
-import { ToastNotice } from "@/components/ui/toast-notice";
 import type { MatchAction, MatchingView } from "@/type/match";
 
 type ProfileState = "loading" | "missing" | "ready" | "error";
@@ -273,7 +272,13 @@ export default function MatchPage() {
 
   if (profileState === "error") {
     return (
-      <ToastNotice kind="error" message={error ?? "Không thể tải việc làm phù hợp."} actionLabel="Thử tải lại" onAction={() => setReloadKey((key) => key + 1)} />
+      <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-800">
+        <p>{error}</p>
+        <button type="button" onClick={() => setReloadKey((key) => key + 1)} className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-lg border border-red-300 px-3 font-semibold hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700">
+          <RotateCcw size={16} aria-hidden="true" />
+          Thử tải lại
+        </button>
+      </div>
     );
   }
 
@@ -287,19 +292,44 @@ export default function MatchPage() {
       </header>
 
       {missingProfileFields.length > 0 && (
-        <ToastNotice kind="info" message={`Bổ sung hồ sơ để gợi ý chính xác hơn: ${missingProfileFields.join(", ")}`} actionLabel="Cập nhật hồ sơ" onAction={() => window.location.assign("/profile")} />
+        <aside className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <span className="font-semibold">Bổ sung hồ sơ để gợi ý chính xác hơn: </span>
+          {missingProfileFields.join(", ")}
+          <Link href="/profile" className="ml-2 font-semibold underline underline-offset-2">Cập nhật hồ sơ</Link>
+        </aside>
       )}
 
       {error && (
-        <ToastNotice kind="error" message={error} />
+        <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          {error}
+        </div>
       )}
 
       {prefetchError && (
-        <ToastNotice kind="warning" message={prefetchError} actionLabel="Thử tải thêm" onAction={retryPrefetch} />
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <span>{prefetchError}</span>
+          <button
+            type="button"
+            onClick={retryPrefetch}
+            className="inline-flex min-h-10 items-center rounded-lg border border-amber-300 px-3 font-semibold hover:bg-amber-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+          >
+            Thử tải thêm
+          </button>
+        </div>
       )}
 
       {undoRecord && (
-        <ToastNotice kind="success" message={`Đã ${undoRecord.action === "interest" ? "quan tâm" : "bỏ qua"} công việc gần nhất.`} actionLabel="Hoàn tác" onAction={() => void handleUndo()} />
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#BFDBFE] bg-blue-50 px-4 py-3 text-sm text-[#1E3A8A]">
+          <span>Đã {undoRecord.action === "interest" ? "quan tâm" : "bỏ qua"} công việc gần nhất.</span>
+          <button
+            type="button"
+            disabled={busy || Boolean(exitDirection)}
+            onClick={() => void handleUndo()}
+            className="inline-flex min-h-10 items-center rounded-lg border border-[#93C5FD] px-3 font-semibold hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563EB] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Hoàn tác
+          </button>
+        </div>
       )}
 
       {activeMatch ? (
