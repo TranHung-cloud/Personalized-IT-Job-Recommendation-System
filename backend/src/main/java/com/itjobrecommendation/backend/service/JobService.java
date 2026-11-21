@@ -265,6 +265,7 @@ public class JobService {
                     .map(location -> location.getLocation().getName())
                     .toList();
             return new JobInterestViewDTO(
+                    job.getId(),
                     job.getTitle(),
                     job.getCompany() == null ? null : job.getCompany().getName(),
                     job.getCompany() == null ? null : job.getCompany().getLogoPath(),
