@@ -318,7 +318,7 @@ public class MatchService {
                             + " (yêu cầu tối thiểu " + requiredYears + " năm)");
                 } else {
                     unmatchedReasons.add("Kinh nghiệm " + formatYears(actualMonths)
-                            + ", yêu cầu tối thiểu " + requiredYears + " năm)");
+                            + ", (yêu cầu tối thiểu " + requiredYears + " năm)");
                 }
             }
         }
