@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.itjobrecommendation.backend.dto.JobAdminViewDTO;
 import com.itjobrecommendation.backend.dto.JobDetailViewDTO;
+import com.itjobrecommendation.backend.dto.JobInterestViewDTO;
 import com.itjobrecommendation.backend.service.JobService;
 
 import lombok.RequiredArgsConstructor;
@@ -44,6 +46,11 @@ public class JobController {
         return jobService.getView(jobId);
     }
 
+    @GetMapping("/jobs/interest")
+    public ResponseEntity<List<JobInterestViewDTO>> getJobInterest() {
+        return ResponseEntity.ok(jobService.getJobInterest());
+    }
+
     @GetMapping("/admin/jobs/page")
     public Page<JobAdminViewDTO> getAdminJobs(
             @PageableDefault(size = 20, sort = "postedAt", direction = Sort.Direction.DESC) Pageable pageable,
@@ -57,5 +64,4 @@ public class JobController {
         String rawJson = jobService.getRawJobDescriptionJson(jobId);
         return objectMapper.readTree(rawJson);
     }
-
 }

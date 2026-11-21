@@ -17,7 +17,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.itjobrecommendation.backend.dto.JobAdminViewDTO;
 import com.itjobrecommendation.backend.dto.JobDetailViewDTO;
+import com.itjobrecommendation.backend.dto.JobInterestViewDTO;
+import com.itjobrecommendation.backend.entity.Account;
 import com.itjobrecommendation.backend.entity.Job;
+import com.itjobrecommendation.backend.entity.UserInteraction;
 import com.itjobrecommendation.backend.entity.enums.UserInteractionAction;
 import com.itjobrecommendation.backend.repository.JobLocationRepository;
 import com.itjobrecommendation.backend.repository.JobRepository;
@@ -35,6 +38,7 @@ public class JobService {
     private final JobLocationRepository jobLocationRepository;
     private final JobSkillRepository jobSkillRepository;
     private final UserInteractionRepository userInteractionRepository;
+    private final AccountService accountService;
 
     @Transactional(readOnly = true)
     public JobDetailViewDTO getView(UUID jobId) {
@@ -243,5 +247,31 @@ public class JobService {
             throw new IllegalArgumentException("Mô tả việc làm chưa được lưu trữ");
         }
         return mediaService.getRawJobDescriptionJson(job.getSource().getRawKey());
+    }
+
+    public List<JobInterestViewDTO> getJobInterest() {
+        Account currentAcc = accountService.getCurrentAccount();
+        List<UserInteraction> loves = userInteractionRepository.findByIdAccountIdAndJobExpiredAtAfterAndAction(
+                currentAcc.getId(),
+                java.time.OffsetDateTime.now(),
+                UserInteractionAction.interest);
+        List<Job> jobs = loves.stream().map(UserInteraction::getJob).toList();
+        if (jobs.isEmpty())
+            return null;
+        return jobs.stream().map(job -> {
+            List<String> locations = jobLocationRepository.getByJob(job).stream()
+                    .map(location -> location.getLocation().getName())
+                    .toList();
+            return new JobInterestViewDTO(
+                    job.getTitle(),
+                    job.getCompany() == null ? null : job.getCompany().getName(),
+                    job.getCompany() == null ? null : job.getCompany().getLogoPath(),
+                    formatSalary(job),
+                    formatExperienceRange(job),
+                    job.getWorkMode() == null ? null : job.getWorkMode().getName(),
+                    locations,
+                    job.getExpiredAt() == null ? null : job.getExpiredAt().toLocalDate(),
+                    job.getSource() == null ? null : job.getSource().getUrl());
+        }).toList();
     }
 }
