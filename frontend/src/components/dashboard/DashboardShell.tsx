@@ -32,10 +32,10 @@ const navigation: Record<DashboardVariant, NavigationItem[]> = {
   user: [
     {
       label: "Khám phá việc làm",
-      href: "/user/match",
+      href: "/match",
       icon: BriefcaseBusiness,
     },
-    { label: "Việc quan tâm", href: "/user/saved", icon: Bookmark },
+    { label: "Việc quan tâm", href: "/interest", icon: Bookmark },
     { label: "Hồ sơ của tôi", href: "/profile", icon: UserRound },
   ],
   admin: [
@@ -257,7 +257,12 @@ export function DashboardShell({
           className="min-h-[calc(100vh-4rem)] p-4 sm:p-6 lg:p-8"
         >
           {variant === "user" && profileCheckError && (
-            <ToastNotice kind="warning" message={profileCheckError} actionLabel="Thử lại" onAction={() => window.location.reload()} />
+            <ToastNotice
+              kind="warning"
+              message={profileCheckError}
+              actionLabel="Thử lại"
+              onAction={() => window.location.reload()}
+            />
           )}
           {children}
         </main>
