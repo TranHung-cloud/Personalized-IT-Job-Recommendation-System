@@ -16,7 +16,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class JobInterestViewDTO {
-    private UUID id;
+    private UUID jobId;
     private String title;
     private String companyName;
     private String companyLogo;
