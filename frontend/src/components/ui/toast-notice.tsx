@@ -21,13 +21,36 @@ export function ToastNotice({
   actionRef.current = onAction;
 
   useEffect(() => {
+    if (!message) {
+      lastToast.current = "";
+      return;
+    }
+
     const key = `${kind}:${message}:${actionLabel ?? ""}`;
-    if (!message || lastToast.current === key) return;
+
+    if (lastToast.current === key) return;
+
     lastToast.current = key;
 
-    const options = actionLabel && onAction
-      ? { action: { label: actionLabel, onClick: () => actionRef.current?.() }, duration: 7000 }
-      : undefined;
+    const options = {
+      id: "match-undo-toast",
+      duration: 7000,
+      ...(actionLabel && onAction
+        ? {
+            action: {
+              label: actionLabel,
+              onClick: () => actionRef.current?.(),
+            },
+            actionButtonStyle: {
+              background: "#2563EB",
+              color: "#FFFFFF",
+              fontWeight: 600,
+              borderRadius: "8px",
+            },
+          }
+        : {}),
+    };
+
     toast[kind](message, options);
   }, [actionLabel, kind, message]);
 
