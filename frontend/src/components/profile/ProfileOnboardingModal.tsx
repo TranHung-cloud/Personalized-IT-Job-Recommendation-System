@@ -13,7 +13,7 @@ import {
 import { useCompanies } from "@/hook/useCompanies";
 import { useProfile } from "@/hook/useProfile";
 import { ToastNotice } from "@/components/ui/toast-notice";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { SearchableSelect } from "@/components/ui/searchableSelect";
 import { useDropdownPlacement } from "@/hook/useDropdownPlacement";
 import type {
   DegreeInput,

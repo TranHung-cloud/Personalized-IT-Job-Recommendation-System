@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, LoaderCircle, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { authenticatedRequest } from "@/lib/authenticatedRequest";
 import { ToastNotice } from "@/components/ui/toast-notice";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { SearchableSelect } from "@/components/ui/searchableSelect";
 import { Select } from "@/components/ui/select";
 
 type Option = { id: string; name: string };
