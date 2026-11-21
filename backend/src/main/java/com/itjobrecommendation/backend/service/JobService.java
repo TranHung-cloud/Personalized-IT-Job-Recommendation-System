@@ -22,6 +22,7 @@ import com.itjobrecommendation.backend.entity.Account;
 import com.itjobrecommendation.backend.entity.Job;
 import com.itjobrecommendation.backend.entity.UserInteraction;
 import com.itjobrecommendation.backend.entity.enums.UserInteractionAction;
+import com.itjobrecommendation.backend.entity.id.UserInteractionId;
 import com.itjobrecommendation.backend.repository.JobLocationRepository;
 import com.itjobrecommendation.backend.repository.JobRepository;
 import com.itjobrecommendation.backend.repository.JobSpecifications;
@@ -249,6 +250,7 @@ public class JobService {
         return mediaService.getRawJobDescriptionJson(job.getSource().getRawKey());
     }
 
+    @Transactional(readOnly = true)
     public List<JobInterestViewDTO> getJobInterest() {
         Account currentAcc = accountService.getCurrentAccount();
         List<UserInteraction> loves = userInteractionRepository.findByIdAccountIdAndJobExpiredAtAfterAndAction(
@@ -273,5 +275,16 @@ public class JobService {
                     job.getExpiredAt() == null ? null : job.getExpiredAt().toLocalDate(),
                     job.getSource() == null ? null : job.getSource().getUrl());
         }).toList();
+    }
+
+    @Transactional
+    public void removeJobInterest(UUID jobId) {
+        Account currentAcc = accountService.getCurrentAccount();
+        UserInteractionId interactionId = new UserInteractionId(currentAcc.getId(), jobId);
+        UserInteraction interaction = userInteractionRepository.findById(interactionId).orElse(null);
+        if (interaction == null || interaction.getAction() != UserInteractionAction.interest) {
+            throw new IllegalArgumentException("Không tìm thấy việc làm yêu thích");
+        }
+        userInteractionRepository.delete(interaction);
     }
 }
