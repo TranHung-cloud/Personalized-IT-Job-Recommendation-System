@@ -6,8 +6,9 @@ import { BriefcaseBusiness, RotateCcw, UserRound } from "lucide-react";
 import { MatchCard } from "@/components/match/MatchCard";
 import { useMatch } from "@/hook/useMatch";
 import { useProfile } from "@/hook/useProfile";
-import type { MatchAction, MatchingView } from "@/type/match";
+import type { MatchAction, MatchingView, JobDetailView } from "@/type/match";
 import { ToastNotice } from "@/components/ui/toast-notice";
+import { JobDetailModal } from "@/components/match/JobDetailModal";
 
 type ProfileState = "loading" | "missing" | "ready" | "error";
 type UndoRecord = { job: MatchingView; action: MatchAction };
@@ -31,7 +32,8 @@ function isInteractiveTarget(target: EventTarget | null) {
 
 export default function MatchPage() {
   const { hasProfile } = useProfile();
-  const { getMatches, saveInteraction, undoInteraction } = useMatch();
+  const { getMatches, getJobDetail, saveInteraction, undoInteraction } =
+    useMatch();
   const [profileState, setProfileState] = useState<ProfileState>("loading");
   const [matches, setMatches] = useState<MatchingView[]>([]);
   const [missingProfileFields, setMissingProfileFields] = useState<string[]>(
@@ -52,6 +54,12 @@ export default function MatchPage() {
   const seenJobIds = useRef(new Set<string>());
   const popupOpen = false;
   const [toastMessage, setToastMessage] = useState("");
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [jobDetail, setJobDetail] = useState<JobDetailView | null>(null);
+  const [jobDetailLoading, setJobDetailLoading] = useState(false);
+  const [jobDetailError, setJobDetailError] = useState<string | null>(null);
+
+  const detailRequestId = useRef(0);
 
   const endSession = useCallback(() => {
     window.localStorage.removeItem("accessToken");
@@ -59,6 +67,73 @@ export default function MatchPage() {
     window.localStorage.removeItem("accountEmail");
     window.location.assign("/login");
   }, []);
+
+  const loadJobDetail = useCallback(
+    async (jobId: string) => {
+      const requestId = ++detailRequestId.current;
+      const token = window.localStorage.getItem("accessToken");
+
+      if (!token) {
+        endSession();
+        return;
+      }
+
+      setSelectedJobId(jobId);
+      setJobDetail(null);
+      setJobDetailError(null);
+      setJobDetailLoading(true);
+
+      try {
+        const response = await getJobDetail(token, jobId);
+
+        // Ignore stale responses.
+        if (requestId !== detailRequestId.current) return;
+
+        setJobDetail(response);
+      } catch (cause: unknown) {
+        if (requestId !== detailRequestId.current) return;
+
+        if (cause instanceof Error && cause.message === "SESSION_EXPIRED") {
+          endSession();
+          return;
+        }
+
+        setJobDetailError(
+          cause instanceof Error
+            ? cause.message
+            : "Không thể tải thông tin công việc.",
+        );
+      } finally {
+        if (requestId === detailRequestId.current) {
+          setJobDetailLoading(false);
+        }
+      }
+    },
+    [endSession, getJobDetail],
+  );
+
+  const handleCloseJobDetail = useCallback(() => {
+    // Invalidate any pending request.
+    detailRequestId.current += 1;
+
+    setSelectedJobId(null);
+    setJobDetail(null);
+    setJobDetailError(null);
+    setJobDetailLoading(false);
+  }, []);
+
+  const handleRetryJobDetail = useCallback(() => {
+    if (selectedJobId) {
+      void loadJobDetail(selectedJobId);
+    }
+  }, [selectedJobId, loadJobDetail]);
+
+  const handleDetails = useCallback(
+    (jobId: string) => {
+      void loadJobDetail(jobId);
+    },
+    [loadJobDetail],
+  );
 
   const loadMatches = useCallback(async () => {
     setProfileState("loading");
@@ -273,10 +348,6 @@ export default function MatchPage() {
     }
   }, [busy, endSession, exitDirection, undoInteraction, undoRecord]);
 
-  const handleDetails = useCallback(() => {
-    // The details popup is implemented only after its layout review.
-  }, []);
-
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (popupOpen || isInteractiveTarget(event.target)) return;
@@ -351,109 +422,120 @@ export default function MatchPage() {
 
   const activeMatch = matches[0];
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
-      <header className="rounded-2xl border border-[#E2E8F0] bg-white p-5 sm:p-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#2563EB]">
-          Khám phá việc làm
-        </p>
-        <h2 className="mt-1 text-2xl font-bold tracking-tight text-[#0F172A]">
-          Công việc dành cho bạn
-        </h2>
-        <p className="mt-1 text-sm text-[#64748B]">
-          Chọn quan tâm hoặc bỏ qua để tinh chỉnh gợi ý.
-        </p>
-      </header>
+    <>
+      <div className="mx-auto max-w-3xl space-y-5">
+        <header className="rounded-2xl border border-[#E2E8F0] bg-white p-5 sm:p-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#2563EB]">
+            Khám phá việc làm
+          </p>
+          <h2 className="mt-1 text-2xl font-bold tracking-tight text-[#0F172A]">
+            Công việc dành cho bạn
+          </h2>
+          <p className="mt-1 text-sm text-[#64748B]">
+            Chọn quan tâm hoặc bỏ qua để tinh chỉnh gợi ý.
+          </p>
+        </header>
 
-      {missingProfileFields.length > 0 && (
-        <aside className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          <span className="font-semibold">
-            Bổ sung hồ sơ để gợi ý chính xác hơn:{" "}
-          </span>
-          {missingProfileFields.join(", ")}
-          <Link
-            href="/profile"
-            className="ml-2 font-semibold underline underline-offset-2"
+        {missingProfileFields.length > 0 && (
+          <aside className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <span className="font-semibold">
+              Bổ sung hồ sơ để gợi ý chính xác hơn:{" "}
+            </span>
+            {missingProfileFields.join(", ")}
+            <Link
+              href="/profile"
+              className="ml-2 font-semibold underline underline-offset-2"
+            >
+              Cập nhật hồ sơ
+            </Link>
+          </aside>
+        )}
+
+        {error && (
+          <div
+            role="alert"
+            className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
           >
-            Cập nhật hồ sơ
-          </Link>
-        </aside>
-      )}
-
-      {error && (
-        <div
-          role="alert"
-          className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-        >
-          {error}
-        </div>
-      )}
-
-      {prefetchError && (
-        <div
-          role="alert"
-          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
-        >
-          <span>{prefetchError}</span>
-          <button
-            type="button"
-            onClick={retryPrefetch}
-            className="inline-flex min-h-10 items-center rounded-lg border border-amber-300 px-3 font-semibold hover:bg-amber-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
-          >
-            Thử tải thêm
-          </button>
-        </div>
-      )}
-
-      {undoRecord && (
-        <ToastNotice
-          kind="info"
-          message={toastMessage}
-          actionLabel="Hoàn tác"
-          onAction={() => void handleUndo()}
-        />
-      )}
-
-      {activeMatch ? (
-        <MatchCard
-          key={activeMatch.jobId}
-          match={activeMatch}
-          busy={busy}
-          exitDirection={exitDirection}
-          onIgnore={() => void handleDecision("ignore")}
-          onInterest={() => void handleDecision("interest")}
-          onDetails={handleDetails}
-          onExitComplete={advanceCard}
-        />
-      ) : (
-        <section className="grid min-h-72 place-items-center rounded-2xl border border-dashed border-[#CBD5E1] bg-white px-6 py-12 text-center">
-          <div className="max-w-sm">
-            <BriefcaseBusiness
-              className="mx-auto text-[#2563EB]"
-              size={34}
-              aria-hidden="true"
-            />
-            <h2 className="mt-4 text-lg font-bold text-[#0F172A]">
-              {matchesExhausted
-                ? "Bạn đã xem hết gợi ý"
-                : "Đang tìm thêm gợi ý"}
-            </h2>
-            <p className="mt-2 text-sm text-[#64748B]">
-              {matchesExhausted
-                ? "Hãy quay lại sau khi có thêm việc làm mới."
-                : "Thử tải thêm để tiếp tục khám phá các công việc phù hợp."}
-            </p>
-            {!matchesExhausted && prefetchError && (
-              <button
-                type="button"
-                onClick={retryPrefetch}
-                className="mt-5 inline-flex min-h-10 items-center rounded-lg border border-[#CBD5E1] px-3 text-sm font-semibold text-[#475569] hover:bg-[#F8FAFC] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563EB]"
-              >
-                Thử tải thêm
-              </button>
-            )}
+            {error}
           </div>
-        </section>
+        )}
+
+        {prefetchError && (
+          <div
+            role="alert"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+          >
+            <span>{prefetchError}</span>
+            <button
+              type="button"
+              onClick={retryPrefetch}
+              className="inline-flex min-h-10 items-center rounded-lg border border-amber-300 px-3 font-semibold hover:bg-amber-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+            >
+              Thử tải thêm
+            </button>
+          </div>
+        )}
+
+        {undoRecord && (
+          <ToastNotice
+            kind="info"
+            message={toastMessage}
+            actionLabel="Hoàn tác"
+            onAction={() => void handleUndo()}
+          />
+        )}
+
+        {activeMatch ? (
+          <MatchCard
+            key={activeMatch.jobId}
+            match={activeMatch}
+            busy={busy}
+            exitDirection={exitDirection}
+            onIgnore={() => void handleDecision("ignore")}
+            onInterest={() => void handleDecision("interest")}
+            onDetails={() => handleDetails(activeMatch.jobId)}
+            onExitComplete={advanceCard}
+          />
+        ) : (
+          <section className="grid min-h-72 place-items-center rounded-2xl border border-dashed border-[#CBD5E1] bg-white px-6 py-12 text-center">
+            <div className="max-w-sm">
+              <BriefcaseBusiness
+                className="mx-auto text-[#2563EB]"
+                size={34}
+                aria-hidden="true"
+              />
+              <h2 className="mt-4 text-lg font-bold text-[#0F172A]">
+                {matchesExhausted
+                  ? "Bạn đã xem hết gợi ý"
+                  : "Đang tìm thêm gợi ý"}
+              </h2>
+              <p className="mt-2 text-sm text-[#64748B]">
+                {matchesExhausted
+                  ? "Hãy quay lại sau khi có thêm việc làm mới."
+                  : "Thử tải thêm để tiếp tục khám phá các công việc phù hợp."}
+              </p>
+              {!matchesExhausted && prefetchError && (
+                <button
+                  type="button"
+                  onClick={retryPrefetch}
+                  className="mt-5 inline-flex min-h-10 items-center rounded-lg border border-[#CBD5E1] px-3 text-sm font-semibold text-[#475569] hover:bg-[#F8FAFC] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563EB]"
+                >
+                  Thử tải thêm
+                </button>
+              )}
+            </div>
+          </section>
+        )}
+      </div>
+      {selectedJobId && (
+        <JobDetailModal
+          job={jobDetail}
+          loading={jobDetailLoading}
+          error={jobDetailError}
+          onClose={handleCloseJobDetail}
+          onRetry={handleRetryJobDetail}
+        />
       )}
-    </div>
+    </>
   );
 }
