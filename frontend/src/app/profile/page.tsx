@@ -136,7 +136,12 @@ export default function ProfilePage() {
 
   if (loadError) {
     return (
-      <ToastNotice kind="error" message={loadError} actionLabel="Thử tải lại" onAction={() => setReloadKey((current) => current + 1)} />
+      <ToastNotice
+        kind="error"
+        message={loadError}
+        actionLabel="Thử tải lại"
+        onAction={() => setReloadKey((current) => current + 1)}
+      />
     );
   }
 

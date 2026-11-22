@@ -4,10 +4,11 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "JobMatch | Việc làm phù hợp với bạn",
-    template: "%s | JobMatch",
+    default: "Matchob | Việc làm phù hợp với bạn",
+    template: "%s | Matchob",
   },
-  description: "Khám phá công việc IT phù hợp với kỹ năng và định hướng nghề nghiệp của bạn.",
+  description:
+    "Khám phá công việc IT phù hợp với kỹ năng và định hướng nghề nghiệp của bạn.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

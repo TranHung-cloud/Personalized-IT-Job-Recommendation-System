@@ -164,13 +164,15 @@ export function DashboardShell({
       >
         <div className="flex h-16 items-center justify-between border-b border-[#E2E8F0] px-6">
           <Link
-            href={variant === "admin" ? "/admin/dashboard" : "/user/match"}
+            href={variant === "admin" ? "/admin/dashboard" : "/match"}
             className="inline-flex items-center gap-2.5 rounded-md font-semibold tracking-tight focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2563EB]"
           >
-            <span className="flex size-9 items-center justify-center rounded-xl bg-[#2563EB] text-white">
-              <BriefcaseBusiness size={18} />
-            </span>
-            <span>JobMatch</span>
+            <img
+              src="/logo.png"
+              alt="Logo"
+              className="size-10 object-contain"
+            />
+            <span>Matchob</span>
           </Link>
           <button
             type="button"

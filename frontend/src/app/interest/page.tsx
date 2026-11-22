@@ -245,9 +245,11 @@ export default function InterestPage() {
         ) : !error ? (
           <section className="grid min-h-72 place-items-center rounded-2xl border border-dashed border-[#CBD5E1] bg-white px-6 py-12 text-center">
             <div className="max-w-sm">
-              <span className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-blue-50 text-[#2563EB]">
-                <BriefcaseBusiness size={28} />
-              </span>
+              <img
+                src="/logo.png"
+                alt="Logo"
+                className="mx-auto flex size-28 items-center justify-center object-contain"
+              />
 
               <h2 className="mt-5 text-lg font-bold text-[#0F172A]">
                 Chưa có việc làm quan tâm
