@@ -5,7 +5,7 @@ from enum import Enum
 
 ROOT_DIR = Path(__file__).resolve().parent
 
-load_dotenv(ROOT_DIR / ".env")
+load_dotenv(ROOT_DIR / ".env.public")
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
@@ -19,7 +19,7 @@ PROXY_TIMEOUT = int(
 )
 
 MAX_PROXY_ATTEMPTS = int(
-    os.getenv("MAX_PROXY_ATTEMPTS", "5")
+    os.getenv("MAX_PROXY_ATTEMPTS", "40")
 )
 
 MAX_PAGE_CRAWL_URL = int(
