@@ -31,7 +31,7 @@ public interface UserInteractionRepository extends JpaRepository<UserInteraction
                         "group by ui.id.accountId, ui.action")
         List<Object[]> countByAccountIdsGroupedByAction(@Param("accountIds") Collection<UUID> accountIds);
 
-        List<UserInteraction> findByIdAccountIdAndJobExpiredAtAfterAndAction(
+        List<UserInteraction> findByIdAccountIdAndJobExpiredAtAfterAndActionOrderByCreatedAtDesc(
                         UUID accountId,
                         OffsetDateTime now,
                         UserInteractionAction action);

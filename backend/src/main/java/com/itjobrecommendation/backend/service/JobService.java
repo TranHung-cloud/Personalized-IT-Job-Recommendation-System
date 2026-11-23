@@ -253,10 +253,11 @@ public class JobService {
     @Transactional(readOnly = true)
     public List<JobInterestViewDTO> getJobInterest() {
         Account currentAcc = accountService.getCurrentAccount();
-        List<UserInteraction> loves = userInteractionRepository.findByIdAccountIdAndJobExpiredAtAfterAndAction(
-                currentAcc.getId(),
-                java.time.OffsetDateTime.now(),
-                UserInteractionAction.interest);
+        List<UserInteraction> loves = userInteractionRepository
+                .findByIdAccountIdAndJobExpiredAtAfterAndActionOrderByCreatedAtDesc(
+                        currentAcc.getId(),
+                        java.time.OffsetDateTime.now(),
+                        UserInteractionAction.interest);
         List<Job> jobs = loves.stream().map(UserInteraction::getJob).toList();
         if (jobs.isEmpty())
             return null;
