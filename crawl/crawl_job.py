@@ -53,6 +53,11 @@ from crawl.captcha_check import (
     click_checkbox,
     clear_challenge,
 )
+from crawl.error_classifier import (
+    ParserError,
+    classify_error,
+    raise_for_http_status,
+)
 
 class NextRedirectError(ValueError):
     def __init__(self, target_url):
@@ -146,7 +151,10 @@ def _unique_matches(matches):
     return unique
 
 def extract_next_f(html):
-    soup = BeautifulSoup(html, "html.parser")
+    try:
+        soup = BeautifulSoup(html, "html.parser")
+    except Exception as exc:
+        raise ParserError("Không thể phân tích HTML Next.js", original_error=exc) from exc
     chunks = []
 
     for script in soup.find_all("script"):
@@ -159,7 +167,10 @@ def extract_next_f(html):
             content,
         ):
             if int(match.group(1)) == 1:
-                chunks.append(json.loads(match.group(2)))
+                try:
+                    chunks.append(json.loads(match.group(2)))
+                except json.JSONDecodeError as exc:
+                    raise ParserError("JSON chunk Next.js không hợp lệ", original_error=exc) from exc
 
     return "".join(chunks)
 
@@ -198,7 +209,7 @@ def extract_job_data(html):
         )
         if redirect_match:
             raise NextRedirectError(redirect_match.group(1))
-        raise ValueError("Không tìm thấy jobDetail trong dữ liệu Next.js")
+        raise ParserError("Không tìm thấy jobDetail trong dữ liệu Next.js")
 
     def resolve(value, resolving=None):
         if resolving is None:
@@ -413,6 +424,7 @@ def crawl_itviec_job(url, page, lookup_pos, lookup_wm, lookup_loc, lookup_sk, lo
         wait_until="domcontentloaded",
         timeout=60000
     )
+    raise_for_http_status(response)
     wait_and_scroll(page)
     locator = page.locator("script[type='application/ld+json']")
     script_content = locator.all_text_contents()
@@ -497,7 +509,7 @@ def crawl_itviec_job(url, page, lookup_pos, lookup_wm, lookup_loc, lookup_sk, lo
         except json.JSONDecodeError:
             continue
     if not data or data.get("@type") != "JobPosting":
-        raise ValueError("Không tìm thấy JSON-LD JobPosting hợp lệ trên trang ITviec")
+        raise ParserError("Không tìm thấy JSON-LD JobPosting hợp lệ trên trang ITviec")
     # position
     position = None
     pos_label = page.locator(
@@ -561,11 +573,12 @@ def crawl_itviec_job(url, page, lookup_pos, lookup_wm, lookup_loc, lookup_sk, lo
     return job_data, raw_jd_json
 
 def crawl_topcv_job(url, page, lookup_pos, lookup_wm, lookup_loc, lookup_sk, lookup_com):
-    page.goto(
+    response = page.goto(
         url["url"],
         wait_until="domcontentloaded",
         timeout=60000
     )
+    raise_for_http_status(response)
     wait_and_scroll(page)
 
     if is_challenge(page):
@@ -664,7 +677,7 @@ def crawl_topcv_job(url, page, lookup_pos, lookup_wm, lookup_loc, lookup_sk, loo
         except json.JSONDecodeError:
             continue
     if not job_posting_found:
-        raise ValueError("Không tìm thấy JSON-LD JobPosting trên trang TopCV")
+        raise ParserError("Không tìm thấy JSON-LD JobPosting trên trang TopCV")
     position_raw = None
     tag_groups = page.locator(".job-tags__group")
     for group_index in range(tag_groups.count()):
@@ -931,7 +944,8 @@ def crawl_vietnamworks_job(url, proxy, lookup_pos, lookup_wm, lookup_loc, lookup
     }
     return job_data, raw_jd_json
 
-def main():
+def _main():
+    start_time = time.time()
     sources = execute_query("""
         SELECT 
             s.src_id,
@@ -950,7 +964,7 @@ def main():
     lookup_sk = build_raw_lookup("sk")
     lookup_com = build_raw_lookup("com")
     lookups = (lookup_pos, lookup_wm, lookup_loc, lookup_sk, lookup_com)
-    seen_hash = load_existing_hashes()
+    seen_hash.update(load_existing_hashes())
     total_job = 0
     with sync_playwright() as p:
         proxy = None
@@ -980,7 +994,14 @@ def main():
                         succeeded = True
                         break
                     except Exception as exc:
-                        print(f"[MAIN] Lần thử {attempt}/{MAX_RETRIES} lỗi với {source_info['url']}: {exc}")
+                        classified = classify_error(exc)
+                        original = classified.original_error or exc
+                        print(
+                            f"[MAIN] [{type(classified).__name__}] Lần thử "
+                            f"{attempt}/{MAX_RETRIES} lỗi với {source_info['url']}: "
+                            f"{classified}; exception gốc: "
+                            f"{type(original).__name__}: {original}"
+                        )
                         if attempt < max(1, MAX_RETRIES) and site_name in {"itviec", "topcv"}:
                             try:
                                 page.close()
@@ -1000,6 +1021,20 @@ def main():
                     set_source_status(source["src_id"], SOURCE_STATUS_ERROR)
         finally:
             context.close()
+    print(f"[MAIN] Hoàn tất crawl {total_job} job trong {time.time() - start_time:.2f} giây")
+
+
+def main():
+    try:
+        _main()
+    except Exception as exc:
+        classified = classify_error(exc)
+        original = classified.original_error or exc
+        print(
+            f"[MAIN] [{type(classified).__name__}] Lỗi ngoài vòng xử lý job: "
+            f"{classified}; exception gốc: {type(original).__name__}: {original}"
+        )
+        raise classified from exc
 
 if __name__ == "__main__":
     main()
