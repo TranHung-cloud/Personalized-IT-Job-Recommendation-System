@@ -317,8 +317,8 @@ public class MatchService {
                     matchedReasons.add("Đủ kinh nghiệm: " + formatYears(actualMonths) + " năm"
                             + " (yêu cầu tối thiểu " + requiredYears + " năm)");
                 } else {
-                    unmatchedReasons.add("Kinh nghiệm " + formatYears(actualMonths)
-                            + ", (yêu cầu tối thiểu " + requiredYears + " năm)");
+                    unmatchedReasons.add("Kinh nghiệm " + formatYears(actualMonths) + " năm"
+                            + " (yêu cầu tối thiểu " + requiredYears + " năm)");
                 }
             }
         }
