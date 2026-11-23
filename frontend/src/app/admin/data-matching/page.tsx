@@ -208,8 +208,13 @@ export default function AdminDataMatchingPage() {
       rows.find((row) => row.rawName === rawName)?.canonical ?? null;
     setChanges((current) => {
       const next = new Map(current);
-      if (option.id === original?.id) next.delete(rawName);
-      else next.set(rawName, option);
+      if (option.id && option.id === original?.id) {
+        next.delete(rawName);
+      } else if (option.id) {
+        next.set(rawName, option);
+      } else {
+        next.delete(rawName);
+      }
       return next;
     });
     setNotice(null);
