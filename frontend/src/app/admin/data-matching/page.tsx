@@ -365,7 +365,9 @@ export default function AdminDataMatchingPage() {
                 className="h-6 border-l border-[#CBD5E1]"
               />
               <div className="flex items-center gap-2">
-                <span className="font-medium text-[#64748B]">Canonical</span>
+                <span className="font-medium text-[#64748B]">
+                  Tên chuẩn hóa
+                </span>
                 <CanonicalPicker
                   options={options}
                   value={
@@ -438,7 +440,7 @@ export default function AdminDataMatchingPage() {
                 </th>
 
                 <th className="px-4 text-left">Tên thô</th>
-                <th className="px-4 text-center">Danh mục chuẩn</th>
+                <th className="px-4 text-center">Tên chuẩn hóa</th>
                 <th className="px-4 text-center">Trạng thái</th>
                 <th className="px-4 text-center">Số lượng</th>
                 <th className="px-4 text-center">Duyệt kết quả ghép</th>

@@ -47,7 +47,7 @@ const navigation: Record<DashboardVariant, NavigationItem[]> = {
       icon: ArrowLeftRight,
     },
     { label: "Tài khoản", href: "/admin/accounts", icon: UsersRound },
-    { label: "Danh mục kỹ năng", href: "/admin/skills", icon: Tags },
+    { label: "Danh mục chuẩn hóa", href: "/admin/skills", icon: Tags },
   ],
 };
 
