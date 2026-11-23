@@ -50,6 +50,7 @@ public class JobController {
     @GetMapping("/jobs/interest")
     public ResponseEntity<Page<JobInterestViewDTO>> getJobInterest(
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) UUID siteId,
             @PageableDefault(size = 10) Pageable pageable) {
         return ResponseEntity.ok(jobService.getJobInterest(search, pageable));
     }

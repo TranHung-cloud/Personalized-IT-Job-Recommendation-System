@@ -11,6 +11,16 @@ export type JobInterestView = {
   jobUrl: string | null;
 };
 
+export type JobAdminView = {
+  jobId: string;
+  title: string | null;
+  companyName: string | null;
+  missingFields: string[];
+  site: string | null;
+  interestCount: string;
+  ignoreCount: string;
+};
+
 export type PageResponse<T> = {
   content: T[];
   totalElements: number;

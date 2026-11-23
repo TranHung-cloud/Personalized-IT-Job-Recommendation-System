@@ -27,6 +27,7 @@ export function useDropdownPlacement<T extends HTMLElement>(
     }
 
     function updatePlacement() {
+      if (!anchor) return;
       const anchorRect = anchor.getBoundingClientRect();
       const containerRect = scrollContainer?.getBoundingClientRect();
       const topEdge = containerRect
