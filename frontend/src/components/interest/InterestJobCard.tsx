@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { animate, motion, useMotionValue } from "motion/react";
 import type { JobInterestView } from "@/type/job";
+import { CompanyLogo } from "../common/CompanyLogo";
 
 type InterestJobCardProps = {
   job: JobInterestView;
@@ -35,17 +36,10 @@ export function InterestJobCard({
   onDetails,
   onRemove,
 }: InterestJobCardProps) {
-  const [logoPath, setLogoPath] = useState(
-    job.companyLogo?.trim() || "/no_logo.png",
-  );
   const [isMobile, setIsMobile] = useState(false);
   const [revealed, setRevealed] = useState(false);
 
   const x = useMotionValue(0);
-
-  useEffect(() => {
-    setLogoPath(job.companyLogo?.trim() || "/no_logo.png");
-  }, [job.companyLogo]);
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 767px)");
@@ -166,12 +160,18 @@ export function InterestJobCard({
       >
         {/* Header */}
         <div className="flex items-start gap-3">
-          <img
+          <CompanyLogo
+            companyId={job.companyId}
+            companyName={job.companyName}
+            className="size-12 shrink-0 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] object-contain p-1.5 sm:size-14"
+          />
+
+          {/* <img
             src={logoPath}
             alt={job.companyName ? `Logo ${job.companyName}` : "Logo công ty"}
             onError={() => setLogoPath("/no_logo.png")}
             className="size-12 shrink-0 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] object-contain p-1.5 sm:size-14"
-          />
+          /> */}
 
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold text-[#64748B] sm:text-sm">

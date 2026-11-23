@@ -19,7 +19,7 @@ public class JobInterestViewDTO {
     private UUID jobId;
     private String title;
     private String companyName;
-    private String companyLogo;
+    private UUID companyId;
     private String salary;
     private String experience;
     private String workMode;

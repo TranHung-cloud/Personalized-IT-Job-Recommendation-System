@@ -2,7 +2,7 @@ export type MatchAction = "interest" | "ignore";
 
 export type MatchingView = {
   jobId: string;
-  companyLogoPath: string | null;
+  companyId: string | null;
   companyName: string | null;
   jobTitle: string | null;
   matchScore: number | null;
@@ -18,7 +18,7 @@ export type MatchingView = {
 export type JobDetailView = {
   title: string | null;
   companyName: string | null;
-  companyLogo: string | null;
+  companyId: string | null;
   salary: string | null;
   experience: string | null;
   description: string | null;

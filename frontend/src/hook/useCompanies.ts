@@ -18,5 +18,22 @@ export function useCompanies() {
     return await response.json() as CompanySuggestion[];
   }, []);
 
-  return { searchCompanies };
+    const getCompanyLogo = useCallback(async (token: string, companyId: string) :  Promise<string | null> => {
+      let response: Response;
+      try {
+        response = await fetch(`${API_URL}/api/companies/${companyId}/logo`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch {
+        throw new Error("Không thể kết nối máy chủ để tải logo công ty.");
+      }
+      if (response.status === 401) throw new Error("SESSION_EXPIRED");
+      if (response.status === 404) return null;
+      if (!response.ok) throw new Error("Không thể tải logo công ty.");
+      console.log("Logo API status:", response.status);
+      console.log("Logo API content-type:", response.headers.get("content-type"));
+      return URL.createObjectURL(await response.blob());
+    }, []);
+
+  return { searchCompanies, getCompanyLogo };
 }

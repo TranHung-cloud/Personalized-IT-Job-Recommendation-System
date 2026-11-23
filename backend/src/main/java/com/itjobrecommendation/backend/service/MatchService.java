@@ -422,12 +422,9 @@ public class MatchService {
 
     private MatchingViewDTO toView(ScoredMatch scored) {
         Job job = scored.job();
-        // Company currently has no persisted logo field, so there is no source path to
-        // populate.
-        String companyLogoPath = null;
         return new MatchingViewDTO(
                 job.getId().toString(),
-                companyLogoPath,
+                job.getCompany() == null ? null : job.getCompany().getId(),
                 job.getCompany() == null ? null : job.getCompany().getName(),
                 job.getTitle(),
                 (int) Math.round(scored.score()),

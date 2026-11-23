@@ -113,6 +113,30 @@ public class MediaService {
         }
     }
 
+    public StoredImage getLogoImage(String key) {
+        if (!StringUtils.hasText(key)) {
+            throw new IllegalArgumentException("Object key must not be blank");
+        }
+
+        String objectKey = key.startsWith("company-logos/")
+                ? key
+                : "company-logos/" + key;
+        GetObjectRequest request = GetObjectRequest.builder()
+                .bucket(bucket)
+                .key(objectKey)
+                .build();
+
+        try {
+            ResponseBytes<GetObjectResponse> response = s3Client.getObjectAsBytes(request);
+            String contentType = response.response().contentType();
+            return new StoredImage(
+                    response.asByteArray(),
+                    StringUtils.hasText(contentType) ? contentType : MediaType.APPLICATION_OCTET_STREAM_VALUE);
+        } catch (SdkException e) {
+            throw new MediaStorageException("Failed to get logo image", e);
+        }
+    }
+
     public record StoredImage(byte[] bytes, String contentType) {
     }
 

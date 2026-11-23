@@ -104,7 +104,7 @@ public class JobService {
         return new JobDetailViewDTO(
                 job.getTitle(),
                 job.getCompany() == null ? null : job.getCompany().getName(),
-                job.getCompany() == null ? null : job.getCompany().getLogoPath(),
+                job.getCompany() == null ? null : job.getCompany().getId(),
                 formatSalary(job),
                 formatExperienceRange(job),
                 job.getDescription(),
@@ -268,7 +268,7 @@ public class JobService {
                     job.getId(),
                     job.getTitle(),
                     job.getCompany() == null ? null : job.getCompany().getName(),
-                    job.getCompany() == null ? null : job.getCompany().getLogoPath(),
+                    job.getCompany() == null ? null : job.getCompany().getId(),
                     formatSalary(job),
                     formatExperienceRange(job),
                     job.getWorkMode() == null ? null : job.getWorkMode().getName(),

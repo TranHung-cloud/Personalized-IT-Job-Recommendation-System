@@ -13,6 +13,7 @@ import {
   LoaderCircle,
 } from "lucide-react";
 import type { JobDetailView } from "@/type/match";
+import { CompanyLogo } from "@/components/common/CompanyLogo";
 
 type JobDetailModalProps = {
   job: JobDetailView | null;
@@ -69,11 +70,6 @@ export function JobDetailModal({
   onRetry,
 }: JobDetailModalProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const [logoPath, setLogoPath] = useState("/no_logo.png");
-
-  useEffect(() => {
-    setLogoPath(job?.companyLogo?.trim() || "/no_logo.png");
-  }, [job?.companyLogo]);
 
   // Lock background scrolling and manage keyboard focus.
   useEffect(() => {
@@ -184,11 +180,10 @@ export function JobDetailModal({
       >
         {/* Fixed header */}
         <header className="flex shrink-0 items-start gap-3 border-b border-[#E2E8F0] bg-white px-4 py-4 sm:px-6 sm:py-5">
-          <img
-            src={logoPath}
-            alt={job?.companyName ? `Logo ${job.companyName}` : "Logo công ty"}
-            onError={() => setLogoPath("/no_logo.png")}
-            className="size-12 shrink-0 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] object-contain p-1.5 sm:size-14"
+          <CompanyLogo
+            companyId={job?.companyId ?? null}
+            companyName={job?.companyName}
+            className="size-12 shrink-0 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-1.5 sm:size-14"
           />
 
           <div className="min-w-0 flex-1">

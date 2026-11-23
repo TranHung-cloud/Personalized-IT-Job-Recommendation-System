@@ -16,6 +16,7 @@ import {
 
 import { motion, useMotionValue, useTransform, animate } from "motion/react";
 import type { MatchingView } from "@/type/match";
+import { CompanyLogo } from "../common/CompanyLogo";
 
 type SwipeDirection = "ignore" | "interest" | null;
 
@@ -82,19 +83,12 @@ export function MatchCard({
   onDetails,
   onExitComplete,
 }: MatchCardProps) {
-  const [logoPath, setLogoPath] = useState(
-    match.companyLogoPath?.trim() || "/no_logo.png",
-  );
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-300, 300], [-12, 12]);
   const scale = useTransform(x, [-300, 0, 300], [0.96, 1, 0.96]);
   const ignoreOpacity = useTransform(x, [-120, -30], [1, 0]);
   const interestOpacity = useTransform(x, [30, 120], [0, 1]);
   const [isReducedMotion, setIsReducedMotion] = useState(false);
-
-  useEffect(() => {
-    setLogoPath(match.companyLogoPath?.trim() || "/no_logo.png");
-  }, [match.companyLogoPath]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -174,22 +168,21 @@ export function MatchCard({
         style={{ opacity: interestOpacity }}
         className="pointer-events-none absolute left-5 top-5 z-10 rotate-[-12deg] rounded-lg border-2 border-emerald-500 px-3 py-1.5 text-sm font-bold uppercase text-emerald-600"
       >
-        ♥ Interested
+        ♥ Quan tâm
       </motion.div>
 
       <motion.div
         style={{ opacity: ignoreOpacity }}
         className="pointer-events-none absolute right-5 top-5 z-10 rotate-[12deg] rounded-lg border-2 border-red-500 px-3 py-1.5 text-sm font-bold uppercase text-red-500"
       >
-        ✕ Ignore
+        ✕ Bỏ qua
       </motion.div>
 
       {/* Job header */}
       <div className="flex items-start gap-3 sm:gap-4">
-        <img
-          src={logoPath}
-          alt={match.companyName ? `Logo ${match.companyName}` : "Logo công ty"}
-          onError={() => setLogoPath("/no_logo.png")}
+        <CompanyLogo
+          companyId={match.companyId}
+          companyName={match.companyName}
           className="size-14 shrink-0 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] object-contain p-1.5 sm:size-16"
         />
 

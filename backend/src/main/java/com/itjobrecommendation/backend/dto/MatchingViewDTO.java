@@ -2,6 +2,7 @@ package com.itjobrecommendation.backend.dto;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -14,7 +15,7 @@ import lombok.Setter;
 @Setter
 public class MatchingViewDTO {
     private String jobId;
-    private String companyLogoPath;
+    private UUID companyId;
     private String companyName;
     private String jobTitle;
     private Integer matchScore;

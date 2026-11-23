@@ -9,6 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.core.ParameterizedTypeReference;
@@ -22,11 +23,13 @@ import com.itjobrecommendation.backend.dto.CompanySuggestionDTO;
 import com.itjobrecommendation.backend.entity.Company;
 import com.itjobrecommendation.backend.repository.CompanyRepository;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class CompanyService {
+    private final MediaService mediaService;
     private static final String CLEARBIT_URL = "https://autocomplete.clearbit.com/v1/companies/suggest";
     private static final long RATE_WINDOW_MILLIS = 60 * 1000L;
     private static final int PER_CLIENT_REQUEST_LIMIT = 20;
@@ -224,5 +227,15 @@ public class CompanyService {
     }
 
     private record RankedCompany(Company company, double score) {
+    }
+
+    @Transactional
+    public MediaService.StoredImage getLogoImageForCompany(UUID companyId) {
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new RuntimeException("Công ty không tồn tại"));
+        String logoPath = company.getLogoPath();
+        if (logoPath == null || logoPath.isBlank())
+            return null;
+        return mediaService.getLogoImage(logoPath);
     }
 }
