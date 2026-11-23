@@ -1,5 +1,7 @@
 package com.itjobrecommendation.backend.controller;
 
+import java.util.UUID;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -7,6 +9,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,43 +30,51 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/accounts")
+@RequestMapping("/api")
 @RequiredArgsConstructor
 public class AccountController {
     private final AccountService accountService;
     private final PasswordResetService passwordResetService;
 
-    @GetMapping
+    @GetMapping("/admin/accounts")
     public ResponseEntity<Page<AccountViewDTO>> getAccounts(
-            @RequestParam(required = false) String role,
+            @RequestParam(required = false) UUID roleId,
+            @RequestParam(required = false) String search,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(accountService.getAccounts(role, pageable));
+        return ResponseEntity.ok(accountService.getAccounts(roleId, search, pageable));
     }
 
-    @PostMapping("/register")
+    @PostMapping("/admin/accounts/{id}/ban")
+    public ResponseEntity<Void> banAccount(
+            @PathVariable UUID id) {
+        accountService.banAccount(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/accounts/register")
     public ResponseEntity<Void> register(@Valid @RequestBody AccountCreateDTO request) {
         accountService.create(request);
         return ResponseEntity.status(HttpStatus.ACCEPTED).build();
     }
 
-    @PostMapping("/verify-email")
+    @PostMapping("/accounts/verify-email")
     public ResponseEntity<Void> verifyEmail(@Valid @RequestBody EmailVerificationRequest request) {
         accountService.verifyEmail(request.token());
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/login")
+    @PostMapping("/accounts/login")
     public ResponseEntity<AccountLoginResponseDTO> login(@Valid @RequestBody AccountLoginDTO request) {
         return ResponseEntity.ok(accountService.login(request));
     }
 
-    @PostMapping("/password-reset/request")
+    @PostMapping("/accounts/password-reset/request")
     public ResponseEntity<Void> requestPasswordReset(@Valid @RequestBody PasswordResetRequest request) {
         passwordResetService.requestReset(request.email());
         return ResponseEntity.status(HttpStatus.ACCEPTED).build();
     }
 
-    @PostMapping("/password-reset/confirm")
+    @PostMapping("/accounts/password-reset/confirm")
     public ResponseEntity<Void> confirmPasswordReset(@Valid @RequestBody PasswordResetConfirmRequest request) {
         passwordResetService.confirmReset(request.token(), request.newPassword());
         return ResponseEntity.noContent().build();

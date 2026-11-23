@@ -1,6 +1,7 @@
 package com.itjobrecommendation.backend.dto;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,6 +17,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class AccountViewDTO {
+    private UUID id;
     private String email;
     private String role;
     private LocalDateTime createdAt;

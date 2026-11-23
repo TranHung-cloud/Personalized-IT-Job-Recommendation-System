@@ -27,6 +27,15 @@ export type LoginResponse = {
   role: string | null;
 };
 
+export type AccountView = {
+  id: string;
+  email: string;
+  role: string | null;
+  createdAt: string | null;
+  interestedJobCount: number;
+  ignoredJobCount: number;
+};
+
 export type ApiErrorResponse = {
   message?: string;
   detail?: string;

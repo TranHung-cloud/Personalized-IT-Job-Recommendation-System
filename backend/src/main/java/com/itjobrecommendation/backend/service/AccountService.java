@@ -18,7 +18,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -125,15 +124,19 @@ public class AccountService {
     }
 
     @Transactional(readOnly = true)
-    @PreAuthorize("hasRole('ADMIN')")
-    public Page<AccountViewDTO> getAccounts(String role, Pageable pageable) {
+    public Page<AccountViewDTO> getAccounts(UUID roleId, String search, Pageable pageable) {
         Specification<Account> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             predicates.add(cb.isNull(root.get("deletedAt")));
 
-            if (role != null && !role.isBlank()) {
+            if (roleId != null) {
                 Join<Account, Role> roleJoin = root.join("role", JoinType.LEFT);
-                predicates.add(cb.equal(cb.upper(roleJoin.get("name")), role.trim().toUpperCase()));
+                predicates.add(cb.equal(roleJoin.get("id"), roleId));
+            }
+
+            if (search != null && !search.isBlank()) {
+                String searchPattern = "%" + search.toLowerCase() + "%";
+                predicates.add(cb.like(cb.lower(root.get("email")), searchPattern));
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));
@@ -163,12 +166,31 @@ public class AccountService {
             int ignoredCount = counts.getOrDefault(UserInteractionAction.ignore, 0);
 
             return AccountViewDTO.builder()
+                    .id(account.getId())
                     .email(account.getEmail())
                     .role(account.getRole() != null ? account.getRole().getName() : null)
                     .createdAt(account.getCreatedAt() != null ? account.getCreatedAt().toLocalDateTime() : null)
                     .interestedJobCount(interestedCount)
                     .ignoredJobCount(ignoredCount)
                     .build();
+        });
+    }
+
+    @Transactional
+    public void banAccount(UUID accountId) {
+        Account account = accountRepository.findByIdForUpdate(accountId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tài khoản không tồn tại"));
+        if (account.getDeletedAt() != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Không thể khóa tài khoản đã bị xóa");
+        }
+        account.setDeletedAt(OffsetDateTime.now());
+
+        String email = account.getEmail();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                emailService.sendAccountBannedEmail(email);
+            }
         });
     }
 

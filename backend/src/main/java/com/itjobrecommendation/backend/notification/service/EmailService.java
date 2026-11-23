@@ -46,6 +46,11 @@ public class EmailService {
     }
 
     @Async("emailExecutor")
+    public void sendAccountBannedEmail(String recipient) {
+        sendNow(emailTemplate.accountBanned(recipient));
+    }
+
+    @Async("emailExecutor")
     public void send(EmailMessageDTO message) {
         sendNow(message);
     }

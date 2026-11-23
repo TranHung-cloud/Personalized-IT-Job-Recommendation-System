@@ -35,4 +35,20 @@ public class EmailTemplate {
                                 .isHtml(true)
                                 .build();
         }
+
+        public EmailMessageDTO accountBanned(String recipient) {
+                String body = "<p>Chào bạn,</p>"
+                                + "<p>Chúng tôi xin thông báo rằng tài khoản Matchob liên kết với địa chỉ email <strong>"
+                                + recipient
+                                + "</strong> của bạn đã bị khóa bởi quản trị viên hệ thống.</p>"
+                                + "<p>Nếu bạn cho rằng đây là sự nhầm lẫn hoặc cần hỗ trợ thêm, vui lòng liên hệ với bộ phận hỗ trợ của chúng tôi.</p>"
+                                + "<p>Trân trọng,<br/>Đội ngũ Matchob</p>";
+
+                return EmailMessageDTO.builder()
+                                .to(recipient)
+                                .subject("Thông báo khóa tài khoản Matchob")
+                                .body(body)
+                                .isHtml(true)
+                                .build();
+        }
 }
