@@ -30,8 +30,6 @@ export function useCompanies() {
       if (response.status === 401) throw new Error("SESSION_EXPIRED");
       if (response.status === 404) return null;
       if (!response.ok) throw new Error("Không thể tải logo công ty.");
-      console.log("Logo API status:", response.status);
-      console.log("Logo API content-type:", response.headers.get("content-type"));
       return URL.createObjectURL(await response.blob());
     }, []);
 
