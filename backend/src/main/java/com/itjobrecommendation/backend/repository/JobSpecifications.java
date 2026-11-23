@@ -39,6 +39,11 @@ public final class JobSpecifications {
                 .and((root, query, builder) -> hasAllWorkModes(root, builder, workModeIds));
     }
 
+    public static Specification<Job> interest(String search, List<UUID> jobIds) {
+        return search(search)
+                .and((root, query, builder) -> root.get("id").in(jobIds));
+    }
+
     private static Specification<Job> search(String search) {
         String normalizedSearch = search == null ? "" : search.trim().toLowerCase(Locale.ROOT);
         return (root, query, builder) -> {

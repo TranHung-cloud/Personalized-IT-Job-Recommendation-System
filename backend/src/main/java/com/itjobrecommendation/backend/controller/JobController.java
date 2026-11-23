@@ -48,8 +48,10 @@ public class JobController {
     }
 
     @GetMapping("/jobs/interest")
-    public ResponseEntity<List<JobInterestViewDTO>> getJobInterest() {
-        return ResponseEntity.ok(jobService.getJobInterest());
+    public ResponseEntity<Page<JobInterestViewDTO>> getJobInterest(
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 10) Pageable pageable) {
+        return ResponseEntity.ok(jobService.getJobInterest(search, pageable));
     }
 
     @DeleteMapping("/jobs/interest/{jobId}")

@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -251,17 +252,26 @@ public class JobService {
     }
 
     @Transactional(readOnly = true)
-    public List<JobInterestViewDTO> getJobInterest() {
+    public Page<JobInterestViewDTO> getJobInterest(String search, Pageable pageable) {
         Account currentAcc = accountService.getCurrentAccount();
+
         List<UserInteraction> loves = userInteractionRepository
                 .findByIdAccountIdAndJobExpiredAtAfterAndActionOrderByCreatedAtDesc(
                         currentAcc.getId(),
                         java.time.OffsetDateTime.now(),
                         UserInteractionAction.interest);
-        List<Job> jobs = loves.stream().map(UserInteraction::getJob).toList();
-        if (jobs.isEmpty())
-            return null;
-        return jobs.stream().map(job -> {
+
+        List<UUID> jobIds = loves.stream()
+                .map(love -> love.getJob().getId())
+                .distinct()
+                .toList();
+
+        if (jobIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        Specification<Job> spec = JobSpecifications.interest(search, jobIds);
+        return jobRepository.findAll(spec, pageable).map(job -> {
             List<String> locations = jobLocationRepository.getByJob(job).stream()
                     .map(location -> location.getLocation().getName())
                     .toList();
@@ -276,7 +286,7 @@ public class JobService {
                     locations,
                     job.getExpiredAt() == null ? null : job.getExpiredAt().toLocalDate(),
                     job.getSource() == null ? null : job.getSource().getUrl());
-        }).toList();
+        });
     }
 
     @Transactional
