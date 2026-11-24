@@ -99,7 +99,8 @@ export default function AdminDashboardPage() {
             Tổng quan hệ thống
           </h1>
           <p className="mt-1 text-sm text-[#64748B]">
-            Thống kê xu hướng việc làm, hiệu suất thu thập dữ liệu và mức độ tương tác người dùng.
+            Thống kê xu hướng việc làm, hiệu suất thu thập dữ liệu và mức độ
+            tương tác người dùng.
           </p>
         </div>
 
@@ -166,7 +167,9 @@ export default function AdminDashboardPage() {
             </div>
           </div>
           <p className="mt-3 text-2xl font-bold tracking-tight text-[#0F172A]">
-            {loading ? "…" : (stats?.totalSources?.toLocaleString("vi-VN") ?? "0")}
+            {loading
+              ? "…"
+              : (stats?.totalSources?.toLocaleString("vi-VN") ?? "0")}
           </p>
           <p className="mt-1 flex items-center gap-1 text-xs text-[#64748B]">
             <TrendingUp size={13} className="text-emerald-600" />
@@ -185,7 +188,9 @@ export default function AdminDashboardPage() {
             </div>
           </div>
           <p className="mt-3 text-2xl font-bold tracking-tight text-[#0F172A]">
-            {loading ? "…" : (stats?.totalAccounts?.toLocaleString("vi-VN") ?? "0")}
+            {loading
+              ? "…"
+              : (stats?.totalAccounts?.toLocaleString("vi-VN") ?? "0")}
           </p>
           <p className="mt-1 flex items-center gap-1 text-xs text-[#64748B]">
             <TrendingUp size={13} className="text-emerald-600" />
@@ -204,7 +209,9 @@ export default function AdminDashboardPage() {
             </div>
           </div>
           <p className="mt-3 text-2xl font-bold tracking-tight text-[#0F172A]">
-            {loading ? "…" : (stats?.totalInteractions?.toLocaleString("vi-VN") ?? "0")}
+            {loading
+              ? "…"
+              : (stats?.totalInteractions?.toLocaleString("vi-VN") ?? "0")}
           </p>
           <p className="mt-1 flex items-center gap-1 text-xs text-[#64748B]">
             <TrendingUp size={13} className="text-emerald-600" />
@@ -219,10 +226,10 @@ export default function AdminDashboardPage() {
         <div className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
           <div className="mb-4">
             <h2 className="text-base font-bold text-[#0F172A]">
-              1. Xu hướng đăng tuyển (Job Posting Trend)
+              Xu hướng đăng tuyển
             </h2>
             <p className="mt-0.5 text-xs text-[#64748B]">
-              Số lượng việc làm mới được đăng theo thời gian (nguồn: ngày đăng tuyển).
+              Số lượng việc làm mới được đăng theo thời gian.
             </p>
           </div>
 
@@ -237,14 +244,20 @@ export default function AdminDashboardPage() {
                   data={stats?.jobPostingTrend ?? []}
                   margin={{ top: 10, right: 20, left: -10, bottom: 0 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="#F1F5F9"
+                    vertical={false}
+                  />
                   <XAxis
                     dataKey="label"
                     stroke="#94A3B8"
                     fontSize={11}
                     tickLine={false}
                     axisLine={{ stroke: "#E2E8F0" }}
-                    interval={getXAxisInterval(stats?.jobPostingTrend?.length ?? 0)}
+                    interval={getXAxisInterval(
+                      stats?.jobPostingTrend?.length ?? 0,
+                    )}
                   />
                   <YAxis
                     stroke="#94A3B8"
@@ -263,7 +276,11 @@ export default function AdminDashboardPage() {
                       fontSize: "12px",
                       padding: "8px 12px",
                     }}
-                    labelStyle={{ color: "#94A3B8", fontWeight: 600, marginBottom: "4px" }}
+                    labelStyle={{
+                      color: "#94A3B8",
+                      fontWeight: 600,
+                      marginBottom: "4px",
+                    }}
                     itemStyle={{ color: "#FFFFFF" }}
                   />
                   <Line
@@ -285,10 +302,10 @@ export default function AdminDashboardPage() {
         <div className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
           <div className="mb-4">
             <h2 className="text-base font-bold text-[#0F172A]">
-              2. Hiệu suất Crawler (Crawler Performance)
+              Hiệu suất thu thập dữ liệu
             </h2>
             <p className="mt-0.5 text-xs text-[#64748B]">
-              Số lượng bài đăng nguồn được crawler thu thập và trạng thái xử lý.
+              Số lượng bài đăng được thu thập và trạng thái xử lý.
             </p>
           </div>
 
@@ -303,14 +320,20 @@ export default function AdminDashboardPage() {
                   data={stats?.crawlerPerformance ?? []}
                   margin={{ top: 10, right: 20, left: -10, bottom: 0 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="#F1F5F9"
+                    vertical={false}
+                  />
                   <XAxis
                     dataKey="label"
                     stroke="#94A3B8"
                     fontSize={11}
                     tickLine={false}
                     axisLine={{ stroke: "#E2E8F0" }}
-                    interval={getXAxisInterval(stats?.crawlerPerformance?.length ?? 0)}
+                    interval={getXAxisInterval(
+                      stats?.crawlerPerformance?.length ?? 0,
+                    )}
                   />
                   <YAxis
                     stroke="#94A3B8"
@@ -329,7 +352,11 @@ export default function AdminDashboardPage() {
                       fontSize: "12px",
                       padding: "8px 12px",
                     }}
-                    labelStyle={{ color: "#94A3B8", fontWeight: 600, marginBottom: "4px" }}
+                    labelStyle={{
+                      color: "#94A3B8",
+                      fontWeight: 600,
+                      marginBottom: "4px",
+                    }}
                   />
                   <Legend
                     verticalAlign="top"
@@ -340,7 +367,7 @@ export default function AdminDashboardPage() {
                   />
                   <Line
                     type="monotone"
-                    name="Đã crawl thành công"
+                    name="Đã cào thành công"
                     dataKey="crawled"
                     stroke="#10B981"
                     strokeWidth={2}
@@ -358,7 +385,7 @@ export default function AdminDashboardPage() {
                   />
                   <Line
                     type="monotone"
-                    name="Tổng nguồn"
+                    name="Tổng bài đăng"
                     dataKey="total"
                     stroke="#6366F1"
                     strokeWidth={1.5}
@@ -375,7 +402,7 @@ export default function AdminDashboardPage() {
         <div className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
           <div className="mb-4">
             <h2 className="text-base font-bold text-[#0F172A]">
-              3. Tăng trưởng người dùng (User Growth)
+              Tăng trưởng người dùng
             </h2>
             <p className="mt-0.5 text-xs text-[#64748B]">
               Số lượng tài khoản người dùng đăng ký mới trong hệ thống.
@@ -393,7 +420,11 @@ export default function AdminDashboardPage() {
                   data={stats?.userGrowth ?? []}
                   margin={{ top: 10, right: 20, left: -10, bottom: 0 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="#F1F5F9"
+                    vertical={false}
+                  />
                   <XAxis
                     dataKey="label"
                     stroke="#94A3B8"
@@ -419,7 +450,11 @@ export default function AdminDashboardPage() {
                       fontSize: "12px",
                       padding: "8px 12px",
                     }}
-                    labelStyle={{ color: "#94A3B8", fontWeight: 600, marginBottom: "4px" }}
+                    labelStyle={{
+                      color: "#94A3B8",
+                      fontWeight: 600,
+                      marginBottom: "4px",
+                    }}
                     itemStyle={{ color: "#FFFFFF" }}
                   />
                   <Line
@@ -441,10 +476,10 @@ export default function AdminDashboardPage() {
         <div className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
           <div className="mb-4">
             <h2 className="text-base font-bold text-[#0F172A]">
-              4. Mức độ tương tác (User Engagement)
+              Mức độ tương tác
             </h2>
             <p className="mt-0.5 text-xs text-[#64748B]">
-              Lượt người dùng bấm quan tâm (bookmark) hoặc bỏ qua (ignore) việc làm.
+              Lượt người dùng bấm quan tâm hoặc bỏ qua việc làm.
             </p>
           </div>
 
@@ -459,14 +494,20 @@ export default function AdminDashboardPage() {
                   data={stats?.userEngagement ?? []}
                   margin={{ top: 10, right: 20, left: -10, bottom: 0 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="#F1F5F9"
+                    vertical={false}
+                  />
                   <XAxis
                     dataKey="label"
                     stroke="#94A3B8"
                     fontSize={11}
                     tickLine={false}
                     axisLine={{ stroke: "#E2E8F0" }}
-                    interval={getXAxisInterval(stats?.userEngagement?.length ?? 0)}
+                    interval={getXAxisInterval(
+                      stats?.userEngagement?.length ?? 0,
+                    )}
                   />
                   <YAxis
                     stroke="#94A3B8"
@@ -485,7 +526,11 @@ export default function AdminDashboardPage() {
                       fontSize: "12px",
                       padding: "8px 12px",
                     }}
-                    labelStyle={{ color: "#94A3B8", fontWeight: 600, marginBottom: "4px" }}
+                    labelStyle={{
+                      color: "#94A3B8",
+                      fontWeight: 600,
+                      marginBottom: "4px",
+                    }}
                   />
                   <Legend
                     verticalAlign="top"
